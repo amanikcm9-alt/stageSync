@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Gestion des Stages')</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -330,6 +331,32 @@
             animation: fadeInUp 0.5s ease-out;
         }
 
+        /* Main Content Styles */
+        .main-content {
+            margin-top: 0;
+            padding-top: 0;
+        }
+
+        /* Force navbar to stay at top */
+        .main-navbar {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            z-index: 1030 !important;
+        }
+
+        /* Add padding to body to account for fixed navbar */
+        body {
+            padding-top: 56px !important;
+        }
+
+        /* Ensure main content starts after navbar */
+        .main-content {
+            margin-top: 0 !important;
+            padding-top: 20px !important;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .navbar-nav .nav-link {
@@ -480,13 +507,18 @@
                     @if($user->role->name === 'encadrant')
                         <ul class="navbar-nav me-auto">
                             <li class="nav-item">
-                                <a class="nav-link" href="#">
+                                <a class="nav-link {{ request()->is('encadrant/dashboard') ? 'active' : '' }}" href="{{ route('encadrant.dashboard') }}">
                                     <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="#">
-                                    <i class="fas fa-users me-2"></i>Mes Stagiaires
+                                <a class="nav-link {{ request()->is('encadrant/activities*') ? 'active' : '' }}" href="{{ route('encadrant.activities.index') }}">
+                                    <i class="fas fa-tasks me-2"></i>Mes Activités
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->is('encadrant/evaluations*') ? 'active' : '' }}" href="{{ route('encadrant.evaluations.index') }}">
+                                    <i class="fas fa-clipboard-check me-2"></i>Mes Évaluations
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -508,6 +540,16 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ request()->is('stagiaire/dashboard') ? 'active' : '' }}" href="{{ route('stagiaire.dashboard') }}">
                                     <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->is('stagiaire/activities*') ? 'active' : '' }}" href="{{ route('stagiaire.activities.index') }}">
+                                    <i class="fas fa-tasks me-2"></i>Mes Activités
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->is('stagiaire/evaluations*') ? 'active' : '' }}" href="{{ route('stagiaire.evaluations.index') }}">
+                                    <i class="fas fa-clipboard-check me-2"></i>Mes Évaluations
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -665,5 +707,8 @@
     }
     </script>
     @endif
+    
+    <!-- Scripts spécifiques aux pages -->
+    @yield('scripts')
 </body>
 </html>

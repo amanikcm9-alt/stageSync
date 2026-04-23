@@ -98,6 +98,60 @@ class PublicController extends Controller
         return view('public.offre-detail', compact('offre', 'autresOffres'));
     }
 
+    /**
+     * Retourner les détails d'une offre en JSON pour la modale
+     */
+    public function getOffreDetails(OffreStage $offre)
+    {
+        // Charger l'offre avec ses relations
+        $offre->load('entreprise');
+        
+        return response()->json([
+            'success' => true,
+            'offre' => [
+                'id' => $offre->id,
+                'titre' => $offre->titre,
+                'description' => $offre->description,
+                'missions' => $offre->missions,
+                'secteur' => $offre->secteur,
+                'lieu' => $offre->lieu,
+                'duree_semaines' => $offre->duree_semaines,
+                'remuneration' => $offre->remuneration,
+                'date_debut' => $offre->date_debut,
+                'date_fin' => $offre->date_fin,
+                'type_stage' => $offre->type_stage,
+                'statut' => $offre->statut,
+                'entreprise' => $offre->entreprise ? [
+                    'id' => $offre->entreprise->id,
+                    'nom' => $offre->entreprise->nom,
+                ] : null,
+            ]
+        ]);
+    }
+
+    /**
+     * Retourner les offres disponibles en JSON
+     */
+    public function getOffresDisponibles()
+    {
+        $offres = OffreStage::with('entreprise')
+            ->where('statut', 'publié')
+            ->latest()
+            ->get()
+            ->map(function ($offre) {
+                return [
+                    'id' => $offre->id,
+                    'titre' => $offre->titre,
+                    'entreprise' => $offre->entreprise ? $offre->entreprise->nom : null,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'offres' => $offres
+        ]);
+    }
+
     public function formCandidature(OffreStage $offre)
     {
         // Vérifier que l'offre est publiée et active

@@ -251,6 +251,8 @@ Route::middleware('auth')->group(function () {
 Route::get('/', [PublicController::class, 'accueil'])->name('accueil');
 Route::get('/offres', [PublicController::class, 'offres'])->name('offres');
 Route::get('/offres/{offre}', [PublicController::class, 'showOffre'])->name('offres.show');
+Route::get('/offres/{offre}/details', [PublicController::class, 'getOffreDetails'])->name('offres.details');
+Route::get('/offres/disponibles', [PublicController::class, 'getOffresDisponibles'])->name('offres.disponibles');
 Route::get('/entreprises', [PublicController::class, 'entreprises'])->name('entreprises');
 Route::get('/entreprises/{entreprise}', [PublicController::class, 'showEntreprise'])->name('entreprises.show');
 Route::get('/apropos', [PublicController::class, 'apropos'])->name('apropos');
@@ -361,6 +363,9 @@ Route::middleware(['auth', 'role:rh'])->prefix('rh')->name('rh.')->group(functio
     });
 });
 
+// Route directe pour la proposition d'activité (stagiaires)
+Route::middleware(['auth'])->get('/activities/propose', [ActivityController::class, 'proposeForm'])->name('activities.propose');
+
 // Sprint 3 - Activités et suivi
 Route::middleware(['auth'])->prefix('activities')->name('activities.')->group(function () {
     Route::get('/', [ActivityController::class, 'index'])->name('index');
@@ -402,6 +407,36 @@ Route::middleware(['auth'])->prefix('activities')->name('activities.')->group(fu
     
     // Route pour marquer une notification spécifique comme lue
     Route::post('/discussions/mark-read/{discussion}', [ActivityController::class, 'markNotificationAsRead'])->name('discussions.mark-read');
+});
+
+// Actions des stagiaires sur les activités
+Route::middleware(['auth', 'role:stagiaire'])->prefix('stagiaire')->name('stagiaire.')->group(function () {
+    Route::get('/dashboard', [ActivityController::class, 'dashboard'])->name('dashboard');
+    Route::get('/activities', [ActivityController::class, 'mesActivites'])->name('activities.index');
+    Route::get('/evaluations', [ActivityController::class, 'mesEvaluations'])->name('evaluations.index');
+});
+
+// Actions des stagiaires sur les activités (routes POST)
+Route::middleware(['auth', 'role:stagiaire'])->prefix('activities')->name('activities.')->group(function () {
+    Route::post('/{activity}/accepter', [ActivityController::class, 'accepter'])->name('accepter');
+    Route::post('/{activity}/refuser', [ActivityController::class, 'refuserActivite'])->name('refuser');
+    Route::post('/{activity}/demander-info', [ActivityController::class, 'demanderInfo'])->name('demander-info');
+    Route::post('/{activity}/soumettre-livrable', [ActivityController::class, 'soumettreLivrable'])->name('soumettre-livrable');
+    Route::post('/{activity}/discuter', [ActivityController::class, 'discuter'])->name('discuter');
+});
+
+// Routes pour la gestion des discussions
+Route::middleware(['auth'])->prefix('discussions')->name('discussions.')->group(function () {
+    Route::get('/{activity}/messages', [ActivityController::class, 'getDiscussions'])->name('messages');
+    Route::post('/{message}/edit', [ActivityController::class, 'editMessage'])->name('edit');
+    Route::delete('/{message}/delete', [ActivityController::class, 'deleteMessage'])->name('delete');
+});
+
+// Actions des encadrants sur les activités
+Route::middleware(['auth', 'role:encadrant'])->prefix('encadrant')->name('encadrant.')->group(function () {
+    Route::get('/dashboard', [ActivityController::class, 'dashboard'])->name('dashboard');
+    Route::get('/activities', [ActivityController::class, 'mesActivitesEncadrant'])->name('activities.index');
+    Route::get('/evaluations', [ActivityController::class, 'mesEvaluationsEncadrant'])->name('evaluations.index');
 });
 
 // Soumissions d'activités

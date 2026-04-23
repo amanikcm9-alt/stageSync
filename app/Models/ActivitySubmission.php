@@ -9,6 +9,8 @@ class ActivitySubmission extends Model
 {
     use HasFactory;
 
+    protected $table = 'submissions';
+
     protected $fillable = [
         'activity_id',
         'stagiaire_id',

@@ -147,9 +147,14 @@ class RHUserController extends Controller
 
             \Log::info('Utilisateur créé avec ID: ' . $user->id);
 
-            // Si c'est un stagiaire, créer une candidature associée
+            // Si c'est un stagiaire, créer une candidature associée et lier l'offre
             if ($validatedData['role'] === 'stagiaire' && isset($validatedData['offre_id'])) {
                 \Log::info('Création de la candidature pour le stagiaire...');
+                
+                // Mettre à jour le champ offre_stage_id du stagiaire
+                $user->offre_stage_id = $validatedData['offre_id'];
+                $user->save();
+                \Log::info('offre_stage_id du stagiaire mis à jour: ' . $validatedData['offre_id']);
                 
                 Candidature::create([
                     'nom' => $validatedData['nom'],
@@ -172,7 +177,7 @@ class RHUserController extends Controller
                     'stagiaire_id' => $user->id, // Lier au stagiaire créé
                 ]);
                 
-                \Log::info('Candidature créée pour le stagiaire');
+                \Log::info('Candidature créée pour le stagiaire et offre liée');
             } elseif ($validatedData['role'] === 'encadrant') {
                 \Log::info('Création d\'un encadrant - aucune candidature créée');
             } else {
