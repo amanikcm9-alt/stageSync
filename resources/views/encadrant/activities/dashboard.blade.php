@@ -156,10 +156,7 @@
                                         <i class="fas fa-exclamation-triangle text-warning me-1" style="font-size: 0.75rem;"></i>
                                         <small class="text-muted">Aucune offre</small>
                                     </div>
-                                    <button type="button" class="btn btn-xs btn-outline-warning" data-stagiaire-id="{{ $stagiaire->id }}" data-stagiaire-nom="{{ $stagiaire->prenom }} {{ $stagiaire->nom }}" onclick="assignerOffreStagiaire(this)" style="font-size: 0.7rem; padding: 2px 6px;">
-                                        <i class="fas fa-link"></i>
-                                    </button>
-                                </div>
+                                                                    </div>
                             </div>
                             @endif
                         </div>
@@ -256,10 +253,7 @@
                                             <i class="fas fa-exclamation-triangle text-warning me-2"></i>
                                             <small class="text-warning">Aucune offre de stage assignée</small>
                                         </div>
-                                        <button type="button" class="btn btn-sm btn-outline-warning" data-stagiaire-id="{{ $stagiaire->id }}" data-stagiaire-nom="{{ $stagiaire->prenom }} {{ $stagiaire->nom }}" onclick="assignerOffreStagiaire(this)">
-                                            <i class="fas fa-link"></i> Assigner
-                                        </button>
-                                    </div>
+                                                                            </div>
                                 </div>
                                 @endif
                                 
@@ -658,124 +652,6 @@ function voirDetailsOffre(button) {
     modalElement.addEventListener('hidden.bs.modal', function() {
         console.log('DEBUG: Modale fermée, nettoyage...');
         this.remove();
-    });
-}
-
-// Fonction pour assigner une offre à un stagiaire
-function assignerOffreStagiaire(button) {
-    const stagiaireId = button.getAttribute('data-stagiaire-id');
-    const stagiaireNom = button.getAttribute('data-stagiaire-nom');
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    
-    // Créer une modale pour assigner une offre
-    const modalHtml = '<div class="modal fade" id="assignerOffreModal" tabindex="-1">' +
-        '<div class="modal-dialog">' +
-            '<div class="modal-content">' +
-                '<div class="modal-header">' +
-                    '<h5 class="modal-title">' +
-                        '<i class="fas fa-link text-warning me-2"></i>' +
-                        'Assigner une offre à ' + stagiaireNom +
-                    '</h5>' +
-                    '<button type="button" class="btn-close" data-bs-dismiss="modal"></button>' +
-                '</div>' +
-                '<div class="modal-body">' +
-                    '<div class="mb-3">' +
-                        '<label for="offreSelect" class="form-label">Sélectionner une offre de stage</label>' +
-                        '<select class="form-select" id="offreSelect">' +
-                            '<option value="">Chargement des offres...</option>' +
-                        '</select>' +
-                    '</div>' +
-                '</div>' +
-                '<div class="modal-footer">' +
-                    '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>' +
-                    '<button type="button" class="btn btn-warning" onclick="confirmerAssignationOffre()" data-stagiaire-id="' + stagiaireId + '">' +
-                        '<i class="fas fa-link me-2"></i>Assigner' +
-                    '</button>' +
-                '</div>' +
-            '</div>' +
-        '</div>' +
-    '</div>';
-    
-    // Ajouter la modale au body
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
-    // Afficher la modale
-    const modal = new bootstrap.Modal(document.getElementById('assignerOffreModal'));
-    modal.show();
-    
-    // Charger les offres disponibles
-    fetch('/offres/disponibles', {
-        method: 'GET',
-        headers: {
-            'X-CSRF-TOKEN': csrfToken,
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        const offreSelect = document.getElementById('offreSelect');
-        offreSelect.innerHTML = '<option value="">Sélectionner une offre...</option>';
-        
-        if (data.success && data.offres.length > 0) {
-            data.offres.forEach(offre => {
-                const option = document.createElement('option');
-                option.value = offre.id;
-                option.textContent = offre.titre + ' - ' + (offre.entreprise ? offre.entreprise.nom : 'Entreprise non spécifiée');
-                offreSelect.appendChild(option);
-            });
-        } else {
-            offreSelect.innerHTML = '<option value="">Aucune offre disponible</option>';
-        }
-    })
-    .catch(error => {
-        console.error('Erreur:', error);
-        const offreSelect = document.getElementById('offreSelect');
-        offreSelect.innerHTML = '<option value="">Erreur de chargement</option>';
-    });
-    
-    // Nettoyer la modale quand elle est fermée
-    document.getElementById('assignerOffreModal').addEventListener('hidden.bs.modal', function() {
-        this.remove();
-    });
-}
-
-// Fonction pour confirmer l'assignation d'offre
-function confirmerAssignationOffre() {
-    const offreSelect = document.getElementById('offreSelect');
-    const offreId = offreSelect.value;
-    
-    // Récupérer le stagiaireId depuis le bouton
-    const assignButton = document.querySelector('[data-stagiaire-id]');
-    const stagiaireId = assignButton.getAttribute('data-stagiaire-id');
-    
-    if (!offreId) {
-        alert('Veuillez sélectionner une offre de stage.');
-        return;
-    }
-    
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    
-    fetch(`/stagiaires/${stagiaireId}/assigner-offre`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': csrfToken,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ offre_stage_id: offreId })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Offre assignée avec succès!');
-            bootstrap.Modal.getInstance(document.getElementById('assignerOffreModal')).hide();
-            location.reload(); // Recharger la page pour voir les changements
-        } else {
-            alert('Erreur lors de l\'assignation: ' + (data.error || 'Erreur inconnue'));
-        }
-    })
-    .catch(error => {
-        console.error('Erreur:', error);
-        alert('Erreur lors de l\'assignation de l\'offre.');
     });
 }
 

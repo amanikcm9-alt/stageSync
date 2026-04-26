@@ -19,6 +19,7 @@ use App\Http\Controllers\TestEmailController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ActivitySubmissionController;
 use App\Http\Controllers\EvaluationController;
+use App\Http\Controllers\StagiaireDashboardController;
 
 
 // AUTH
@@ -411,17 +412,19 @@ Route::middleware(['auth'])->prefix('activities')->name('activities.')->group(fu
 
 // Actions des stagiaires sur les activités
 Route::middleware(['auth', 'role:stagiaire'])->prefix('stagiaire')->name('stagiaire.')->group(function () {
-    Route::get('/dashboard', [ActivityController::class, 'dashboard'])->name('dashboard');
-    Route::get('/activities', [ActivityController::class, 'mesActivites'])->name('activities.index');
+    Route::get('/dashboard', [StagiaireDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/activities', [StagiaireDashboardController::class, 'activities'])->name('activities.index');
+    Route::get('/activities/propose', [StagiaireDashboardController::class, 'proposeActivity'])->name('activities.propose');
+    Route::post('/activities/propose', [StagiaireDashboardController::class, 'submitProposal'])->name('activities.submit');
     Route::get('/evaluations', [ActivityController::class, 'mesEvaluations'])->name('evaluations.index');
 });
 
 // Actions des stagiaires sur les activités (routes POST)
 Route::middleware(['auth', 'role:stagiaire'])->prefix('activities')->name('activities.')->group(function () {
     Route::post('/{activity}/accepter', [ActivityController::class, 'accepter'])->name('accepter');
-    Route::post('/{activity}/refuser', [ActivityController::class, 'refuserActivite'])->name('refuser');
-    Route::post('/{activity}/demander-info', [ActivityController::class, 'demanderInfo'])->name('demander-info');
-    Route::post('/{activity}/soumettre-livrable', [ActivityController::class, 'soumettreLivrable'])->name('soumettre-livrable');
+    Route::post('/{activity}/refuser', [StagiaireDashboardController::class, 'refuseActivity'])->name('refuser');
+    Route::post('/{activity}/demander-info', [StagiaireDashboardController::class, 'requestInfo'])->name('demander-info');
+    Route::post('/{activity}/soumettre-livrable', [StagiaireDashboardController::class, 'submitDeliverable'])->name('soumettre-livrable');
     Route::post('/{activity}/discuter', [ActivityController::class, 'discuter'])->name('discuter');
 });
 
@@ -433,7 +436,7 @@ Route::middleware(['auth'])->prefix('discussions')->name('discussions.')->group(
 });
 
 // Actions des encadrants sur les activités
-Route::middleware(['auth', 'role:encadrant'])->prefix('encadrant')->name('encadrant.')->group(function () {
+Route::middleware(['auth'])->prefix('encadrant')->name('encadrant.')->group(function () {
     Route::get('/dashboard', [ActivityController::class, 'dashboard'])->name('dashboard');
     Route::get('/activities', [ActivityController::class, 'mesActivitesEncadrant'])->name('activities.index');
     Route::get('/evaluations', [ActivityController::class, 'mesEvaluationsEncadrant'])->name('evaluations.index');

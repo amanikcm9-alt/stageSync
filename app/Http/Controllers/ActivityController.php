@@ -368,6 +368,11 @@ class ActivityController extends Controller
     {
         $encadrant = Auth::user();
         
+        // Vérification manuelle du rôle pour contourner le problème de middleware
+        if (!$encadrant->role || $encadrant->role->name !== 'encadrant') {
+            abort(403, 'Accès réservé aux encadrants');
+        }
+        
         // Activités créées par l'encadrant
         $activities = Activity::where('encadrant_id', $encadrant->id)
             ->with(['stagiaire', 'submissions', 'documents'])
@@ -395,6 +400,11 @@ class ActivityController extends Controller
     public function mesEvaluationsEncadrant(Request $request)
     {
         $encadrant = Auth::user();
+        
+        // Vérification manuelle du rôle pour contourner le problème de middleware
+        if (!$encadrant->role || $encadrant->role->name !== 'encadrant') {
+            abort(403, 'Accès réservé aux encadrants');
+        }
         
         // Évaluations créées par l'encadrant
         $evaluations = \App\Models\Evaluation::where('evaluateur_id', $encadrant->id)
@@ -435,7 +445,16 @@ class ActivityController extends Controller
                 ->latest()
                 ->paginate(15);
                 
-            return view('encadrant.activities.index', compact('activities'));
+            // Récupérer les stagiaires de l'encadrant pour le filtre
+            $stagiaires = User::whereHas('role', fn($q) => $q->where('name', 'stagiaire'))
+                ->where(function($query) use ($user) {
+                    $query->where('encadrant_id', $user->id)
+                          ->orWhere('encadrant_faculte_id', $user->id)
+                          ->orWhere('encadrant_entreprise_id', $user->id);
+                })
+                ->get();
+                
+            return view('encadrant.activities.index', compact('activities', 'stagiaires'));
         }
         
         return redirect()->route('activities.dashboard');
@@ -694,7 +713,7 @@ class ActivityController extends Controller
                 'activity_encadrant_id' => $activity->encadrant_id,
                 'reason' => 'L\'encadrant n\'est pas propriétaire de l\'activité'
             ]);
-            return redirect()->back()->with('error', 'Accès non autorisé');
+            return response()->json(['success' => false, 'error' => 'Accès non autorisé'], 403);
         }
         
         // Autoriser les stagiaires à supprimer uniquement leurs propres activités
@@ -705,7 +724,7 @@ class ActivityController extends Controller
                 'activity_stagiaire_id' => $activity->stagiaire_id,
                 'reason' => 'Le stagiaire n\'est pas propriétaire de l\'activité'
             ]);
-            return redirect()->back()->with('error', 'Accès non autorisé');
+            return response()->json(['success' => false, 'error' => 'Accès non autorisé'], 403);
         }
         
         try {
@@ -717,13 +736,19 @@ class ActivityController extends Controller
                 'user_role' => $user->role->name
             ]);
             
-            // Redirection selon le rôle
+            // Retourner une réponse JSON selon le rôle
             if ($user->role->name === 'encadrant') {
-                return redirect()->route('activities.index')
-                    ->with('success', 'Activité supprimée avec succès');
+                return response()->json([
+                    'success' => true, 
+                    'message' => 'Activité supprimée avec succès',
+                    'redirect' => route('activities.index')
+                ]);
             } else {
-                return redirect()->route('stagiaire.activities.index')
-                    ->with('success', 'Activité supprimée avec succès');
+                return response()->json([
+                    'success' => true, 
+                    'message' => 'Activité supprimée avec succès',
+                    'redirect' => route('stagiaire.activities.index')
+                ]);
             }
         } catch (\Exception $e) {
             \Log::error('Erreur lors de la suppression d\'activité', [
@@ -732,7 +757,10 @@ class ActivityController extends Controller
                 'error' => $e->getMessage()
             ]);
             
-            return redirect()->back()->with('error', 'Erreur lors de la suppression de l\'activité');
+            return response()->json([
+                'success' => false, 
+                'error' => 'Erreur lors de la suppression de l\'activité'
+            ], 500);
         }
     }
 
@@ -854,17 +882,135 @@ class ActivityController extends Controller
     {
         $user = Auth::user();
         
+        \Log::info('Tentative d\'assignation', [
+            'activity_id' => $activity->id,
+            'user_id' => $user->id,
+            'user_role' => $user->role->name,
+            'activity_encadrant_id' => $activity->encadrant_id,
+            'requested_stagiaire_id' => $request->stagiaire_id
+        ]);
+        
         if ($user->role->name !== 'encadrant' || $activity->encadrant_id !== $user->id) {
-            return redirect()->back()->with('error', 'Accès non autorisé');
+            \Log::warning('Accès non autorisé pour assignation', [
+                'activity_id' => $activity->id,
+                'user_id' => $user->id,
+                'user_role' => $user->role->name,
+                'activity_encadrant_id' => $activity->encadrant_id
+            ]);
+            return response()->json(['success' => false, 'error' => 'Accès non autorisé'], 403);
         }
         
         $request->validate([
             'stagiaire_id' => 'required|exists:users,id',
         ]);
         
-        $activity->assignerAuStagiaire($request->stagiaire_id);
+        try {
+            $activity->assignerAuStagiaire($request->stagiaire_id);
+            
+            \Log::info('Activité assignée avec succès', [
+                'activity_id' => $activity->id,
+                'stagiaire_id' => $request->stagiaire_id,
+                'new_statut' => $activity->statut
+            ]);
+            
+            return response()->json(['success' => true, 'message' => 'Activité assignée au stagiaire']);
+            
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors de l\'assignation', [
+                'activity_id' => $activity->id,
+                'stagiaire_id' => $request->stagiaire_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false, 
+                'error' => 'Erreur lors de l\'assignation: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function evaluerActivite(Request $request, Activity $activity)
+    {
+        $user = Auth::user();
         
-        return redirect()->back()->with('success', 'Activité assignée au stagiaire');
+        \Log::info('Tentative d\'évaluation', [
+            'activity_id' => $activity->id,
+            'user_id' => $user->id,
+            'user_role' => $user->role->name,
+            'activity_stagiaire_id' => $activity->stagiaire_id,
+            'activity_encadrant_id' => $activity->encadrant_id
+        ]);
+        
+        if ($user->role->name !== 'encadrant' || $activity->encadrant_id !== $user->id) {
+            \Log::warning('Accès non autorisé pour évaluation', [
+                'activity_id' => $activity->id,
+                'user_id' => $user->id,
+                'required_role' => 'encadrant',
+                'user_role' => $user->role->name,
+                'activity_encadrant' => $activity->encadrant_id,
+                'user_id' => $user->id
+            ]);
+            return response()->json(['success' => false, 'error' => 'Accès non autorisé'], 403);
+        }
+        
+        // Vérifier si l'activité a un stagiaire assigné
+        if (!$activity->stagiaire_id) {
+            \Log::warning('Tentative d\'évaluation sans stagiaire assigné', [
+                'activity_id' => $activity->id,
+                'user_id' => $user->id
+            ]);
+            return response()->json(['success' => false, 'error' => 'Aucun stagiaire assigné à cette activité'], 400);
+        }
+        
+        $request->validate([
+            'note' => 'required|integer|min:0|max:20',
+            'feedback' => 'nullable|string|max:1000',
+        ]);
+        
+        try {
+            // Créer une nouvelle évaluation avec les bons champs
+            $evaluation = \App\Models\Evaluation::create([
+                'activity_id' => $activity->id,
+                'evaluateur_id' => $user->id,
+                'stagiaire_id' => $activity->stagiaire_id,
+                'titre' => 'Évaluation de l\'activité ' . $activity->id,
+                'note_generale' => $request->note,
+                'commentaires' => $request->feedback,
+                'statut' => 'validee',
+            ]);
+            
+            \Log::info('Évaluation créée avec succès', [
+                'evaluation_id' => $evaluation->id,
+                'activity_id' => $activity->id,
+                'stagiaire_id' => $activity->stagiaire_id,
+                'note' => $request->note
+            ]);
+            
+            // Mettre à jour le statut de l'activité si nécessaire
+            if ($activity->statut !== 'validee') {
+                $activity->update(['statut' => 'validee']);
+                \Log::info('Statut de l\'activité mis à jour', ['activity_id' => $activity->id, 'new_statut' => 'validee']);
+            }
+            
+            return response()->json([
+                'success' => true, 
+                'message' => 'Évaluation enregistrée avec succès'
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors de la création de l\'évaluation', [
+                'activity_id' => $activity->id,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false, 
+                'error' => 'Erreur lors de la création de l\'évaluation: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function mettreAJourProgression(Request $request, Activity $activity)

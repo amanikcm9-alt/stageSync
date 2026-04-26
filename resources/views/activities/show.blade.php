@@ -272,8 +272,26 @@
                         <label for="stagiaire_id" class="form-label">Stagiaire *</label>
                         <select class="form-select" id="stagiaire_id" name="stagiaire_id" required>
                             <option value="">Choisir un stagiaire</option>
-                            @foreach(auth()->user()->stagiaires as $stagiaire)
-                            <option value="{{ $stagiaire->id }}">{{ $stagiaire->prenom }} {{ $stagiaire->nom }}</option>
+                            @php
+                                $user = auth()->user();
+                                
+                                // Version simple et directe - récupérer tous les stagiaires de l'encadrant
+                                $stagiaires = \App\Models\User::where('role_id', 4)
+                                    ->where('encadrant_id', $user->id)
+                                    ->orderBy('prenom')
+                                    ->orderBy('nom')
+                                    ->get();
+                            @endphp
+                            @foreach($stagiaires as $stagiaire)
+                                @php
+                                    $hasActivity = \App\Models\Activity::where('stagiaire_id', $stagiaire->id)->exists();
+                                @endphp
+                                <option value="{{ $stagiaire->id }}">
+                                    {{ $stagiaire->prenom }} {{ $stagiaire->nom }}
+                                    @if($hasActivity)
+                                        (déjà assigné)
+                                    @endif
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -318,6 +336,7 @@
 </div>
 
 <script>
+
 function assignerActivite(activityId) {
     new bootstrap.Modal(document.getElementById('assignModal')).show();
 }
@@ -328,23 +347,49 @@ function evaluerActivite(activityId) {
 
 function submitAssignForm() {
     const activityId = document.getElementById('assignActivityId').value;
+    const stagiaireId = document.getElementById('stagiaire_id').value;
     const form = document.getElementById('assignForm');
     const formData = new FormData(form);
+    
+    // Vérifier si un stagiaire est sélectionné
+    if (!stagiaireId) {
+        alert('Veuillez sélectionner un stagiaire');
+        return;
+    }
+    
+    // Vérifier le CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    if (!csrfToken) {
+        alert('ERREUR: Meta tag CSRF token non trouvé !');
+        return;
+    }
     
     fetch(`/activities/${activityId}/assigner`, {
         method: 'POST',
         body: formData,
         headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': csrfToken.getAttribute('content')
         }
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Fermer la modale
+            const modal = bootstrap.Modal.getInstance(document.getElementById('assignModal'));
+            modal.hide();
+            
+            // Afficher un message de succès
+            alert(data.message);
+            
+            // Recharger la page pour voir les changements
             location.reload();
         } else {
-            alert('Erreur lors de l\'assignation');
+            alert('Erreur lors de l\'assignation: ' + (data.error || 'Erreur inconnue'));
         }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('Erreur lors de l\'assignation');
     });
 }
 
@@ -353,20 +398,39 @@ function submitEvaluationForm() {
     const form = document.getElementById('evaluationForm');
     const formData = new FormData(form);
     
+    // Vérifier le CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    if (!csrfToken) {
+        alert('ERREUR: Meta tag CSRF token non trouvé !');
+        return;
+    }
+    
     fetch(`/activities/${activityId}/evaluer`, {
         method: 'POST',
         body: formData,
         headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': csrfToken.getAttribute('content')
         }
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Fermer la modale
+            const modal = bootstrap.Modal.getInstance(document.getElementById('evaluationModal'));
+            modal.hide();
+            
+            // Afficher un message de succès
+            alert(data.message);
+            
+            // Recharger la page pour voir les changements
             location.reload();
         } else {
-            alert('Erreur lors de l\'évaluation');
+            alert('Erreur lors de l\'évaluation: ' + (data.error || 'Erreur inconnue'));
         }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('Erreur lors de l\'évaluation');
     });
 }
 
@@ -758,12 +822,30 @@ function discuterActivite(activityId) {
 
 function supprimerActivite(activityId) {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette activité ?')) {
-        fetch(`/activities/${activityId}`, {method: 'DELETE'})
+        // Vérifier le CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (!csrfToken) {
+            alert('ERREUR: Meta tag CSRF token non trouvé !');
+            return;
+        }
+        
+        fetch(`/activities/${activityId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken.getAttribute('content'),
+                'Content-Type': 'application/json'
+            }
+        })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     alert(data.message || 'Activité supprimée avec succès');
-                    window.location.href = '{{ route("stagiaire.dashboard") }}';
+                    // Utiliser l'URL de redirection fournie par le serveur
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    } else {
+                        window.location.reload();
+                    }
                 } else {
                     alert('Erreur: ' + (data.error || 'Erreur lors de la suppression'));
                 }
@@ -789,14 +871,20 @@ function supprimerActiviteStagiaire(activityId) {
         fetch(`/activities/${activityId}`, {
             method: 'DELETE',
             headers: {
-                'X-CSRF-TOKEN': token
+                'X-CSRF-TOKEN': token,
+                'Content-Type': 'application/json'
             }
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 alert(data.message || 'Activité supprimée avec succès');
-                window.location.href = '{{ route("stagiaire.activities.index") }}';
+                // Utiliser l'URL de redirection fournie par le serveur
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                } else {
+                    window.location.reload();
+                }
             } else {
                 alert('Erreur: ' + (data.error || 'Erreur lors de la suppression'));
             }

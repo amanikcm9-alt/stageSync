@@ -18,7 +18,7 @@
                         <a href="{{ route('offres') }}" class="btn btn-light btn-lg">
                             <i class="fas fa-search"></i> Explorer les Offres
                         </a>
-                        <a href="{{ route('entreprises.index') }}" class="btn btn-outline-light btn-lg">
+                        <a href="{{ route('entreprises') }}" class="btn btn-outline-light btn-lg">
                             <i class="fas fa-building"></i> Entreprises Partenaires
                         </a>
                     </div>
