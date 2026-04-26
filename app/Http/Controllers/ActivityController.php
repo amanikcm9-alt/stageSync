@@ -354,7 +354,7 @@ class ActivityController extends Controller
         
         // Évaluations reçues par le stagiaire
         $evaluations = \App\Models\Evaluation::where('stagiaire_id', $stagiaire->id)
-            ->with(['evaluateur', 'activity'])
+            ->with(['encadrant', 'activity'])
             ->latest()
             ->get();
 

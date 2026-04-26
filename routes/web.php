@@ -202,8 +202,21 @@ Route::get('/stagiaire/dashboard', function(){
         ->publies()
         ->latest()
         ->get();
+
+    // Notifications non lues
+    $notifications = [];
+    try {
+        $notifications = \App\Models\Notification::where('destinataire_id', $user->id)
+            ->whereNull('date_lecture')
+            ->with(['sender'])
+            ->latest()
+            ->get();
+    } catch (\Exception $e) {
+        // En cas d'erreur, on retourne un tableau vide
+        $notifications = [];
+    }
     
-    return view('stagiaire.activities.dashboard', compact('activities', 'proposedActivities', 'stage', 'evaluations', 'stats', 'documents')); 
+    return view('stagiaire.activities.dashboard', compact('activities', 'proposedActivities', 'stage', 'evaluations', 'stats', 'documents', 'notifications')); 
 })->middleware('role:stagiaire')->name('stagiaire.dashboard');
 
 // Route pour sauvegarder le planning du stagiaire
