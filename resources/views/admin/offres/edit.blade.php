@@ -52,30 +52,16 @@
                         @enderror
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Type de stage *</label>
-                        <select class="form-select @error('type_stage_id') ? 'is-invalid' : ''" name="type_stage_id" required>
-                            <option value="">Choisir un type...</option>
-                            @foreach(\App\Models\TypeStage::actif()->get() as $typeStage)
-                                <option value="{{ $typeStage->id }}" {{ old('type_stage_id', $offre->type_stage_id) == $typeStage->id ? 'selected' : '' }}>
-                                    {{ $typeStage->nom }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('type_stage_id')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-md-6">
                         <label class="form-label">Secteur d'activité *</label>
-                        <select class="form-select @error('secteur_id') ? 'is-invalid' : ''" name="secteur_id" required>
+                        <select class="form-select @error('secteur') ? 'is-invalid' : ''" name="secteur" required>
                             <option value="">Choisir un secteur...</option>
-                            @foreach(\App\Models\Secteur::actif()->get() as $secteur)
-                                <option value="{{ $secteur->id }}" {{ old('secteur_id', $offre->secteur_id) == $secteur->id ? 'selected' : '' }}>
-                                    {{ $secteur->nom }}
+                            @foreach($secteurs as $key => $secteur)
+                                <option value="{{ $key }}" {{ old('secteur', $offre->secteur) == $key ? 'selected' : '' }}>
+                                    {{ $secteur }}
                                 </option>
                             @endforeach
                         </select>
-                        @error('secteur_id')
+                        @error('secteur')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>

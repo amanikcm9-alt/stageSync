@@ -63,8 +63,8 @@
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <div class="stat-number-compact">{{ \App\Models\OffreStage::where('statut', 'publiee')->count() }}</div>
-                            <div class="stat-label-compact text-muted">Offres en cours</div>
+                            <div class="stat-number-compact">{{ \App\Models\OffreStage::count() }}</div>
+                            <div class="stat-label-compact text-muted">Offres</div>
                         </div>
                         <div class="stat-icon-compact text-info">
                             <i class="fas fa-briefcase"></i>
@@ -74,10 +74,41 @@
             </div>
         </div>
         
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-0 shadow-sm stat-card-compact">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="stat-number-compact">{{ \App\Models\Candidature::count() }}</div>
+                            <div class="stat-label-compact text-muted">Candidatures</div>
+                        </div>
+                        <div class="stat-icon-compact text-warning">
+                            <i class="fas fa-inbox"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
+        </div>
+    </div>
 
     <!-- Deuxième ligne de statistiques -->
     <div class="row g-2 mb-3">
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-0 shadow-sm stat-card-compact">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="stat-number-compact">{{ \App\Models\Candidature::where('statut', 'recue')->count() }}</div>
+                            <div class="stat-label-compact text-muted">Reçues</div>
+                        </div>
+                        <div class="stat-icon-compact text-warning">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="col-lg-3 col-md-6">
             <div class="card border-0 shadow-sm stat-card-compact">
                 <div class="card-body p-3">
@@ -125,56 +156,41 @@
                 </div>
             </div>
         </div>
-        
-        <div class="col-lg-3 col-md-6">
-            <div class="card border-0 shadow-sm stat-card-compact">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="stat-number-compact">{{ \App\Models\OffreStage::where('statut', 'affectée')->count() }}</div>
-                            <div class="stat-label-compact text-muted">Offres affectées</div>
-                        </div>
-                        <div class="stat-icon-compact text-warning">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
-    <!-- Section Évaluations -->
-    <div class="card border-0 shadow-sm mb-3">
-        <div class="card-header bg-light">
-            <h6 class="mb-0">
-                <i class="fas fa-clipboard-check text-primary"></i> 
-                Évaluations
-            </h6>
-        </div>
-        <div class="card-body">
-            <div class="row g-3">
-                <!-- Consulter les évaluations -->
-                <div class="col-md-6">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body text-center">
-                            <div class="mb-3">
-                                <i class="fas fa-list-alt fa-3x text-primary"></i>
-                            </div>
-                            <h6 class="card-title">Consulter les évaluations</h6>
-                            <p class="card-text small text-muted">
-                                Consultez toutes les évaluations des stagiaires et encadrants
-                            </p>
-                            <a href="#" class="btn btn-primary btn-sm">
-                                <i class="fas fa-eye me-2"></i>Voir toutes les évaluations
+    <!-- Actions rapides -->
+    <div class="row g-2">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-3">
+                    <h6 class="mb-3 fs-6">Actions Rapides</h6>
+                    <div class="row g-2">
+                        <div class="col-md-3 col-6">
+                            <a href="{{ route('rh.users.index') }}" class="btn btn-outline-primary btn-sm w-100">
+                                <i class="fas fa-users me-1"></i> Utilisateurs
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <a href="{{ route('rh.offres') }}" class="btn btn-outline-success btn-sm w-100">
+                                <i class="fas fa-briefcase me-1"></i> Offres
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <a href="{{ route('rh.candidatures.index') }}" class="btn btn-outline-info btn-sm w-100">
+                                <i class="fas fa-inbox me-1"></i> Candidatures
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <a href="{{ route('rh.assignments.index') }}" class="btn btn-outline-warning btn-sm w-100">
+                                <i class="fas fa-user-check me-1"></i> Affectations
                             </a>
                         </div>
                     </div>
                 </div>
-
-               
             </div>
         </div>
     </div>
+</div>
 
 <style>
 .avatar-circle {

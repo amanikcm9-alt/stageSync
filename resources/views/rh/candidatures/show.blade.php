@@ -15,7 +15,7 @@
                     <p class="text-muted mb-0">
                         <i class="fas fa-clock"></i> 
                         Candidature du {{ $candidature->created_at->format('d/m/Y H:i') }} | 
-                        Offre : {{ $candidature->offreStage?->titre ?? 'Offre non spécifiée' }}
+                        Offre : {{ $candidature->offreStage->titre }}
                     </p>
                 </div>
                 <div>
@@ -106,27 +106,27 @@
                 </div>
                 <div class="card-body">
                     <div class="info-item">
-                        <strong>Titre de l'offre :</strong> {{ $candidature->offreStage?->titre ?? 'Offre non spécifiée' }}
+                        <strong>Titre de l'offre :</strong> {{ $candidature->offreStage->titre }}
                     </div>
                     
                     <div class="info-item">
-                        <strong>Entreprise :</strong> {{ $candidature->offreStage?->entreprise?->nom ?? 'Entreprise non spécifiée' }}
+                        <strong>Entreprise :</strong> {{ $candidature->offreStage->entreprise->nom }}
                     </div>
                     
                     <div class="info-item">
-                        <strong>Lieu :</strong> {{ $candidature->offreStage?->lieu ?? 'Non spécifié' }}
+                        <strong>Lieu :</strong> {{ $candidature->offreStage->lieu }}
                     </div>
                     
                     <div class="info-item">
-                        <strong>Durée :</strong> {{ $candidature->offreStage?->duree_semaines ?? 'N/A' }} semaines
+                        <strong>Durée :</strong> {{ $candidature->offreStage->duree_semaines }} semaines
                     </div>
                     
                     <div class="info-item">
-                        <strong>Rémunération :</strong> {{ $candidature->offreStage?->remuneration ? number_format($candidature->offreStage->remuneration, 2, ',', ' ') . ' €/mois' : 'Non renseignée' }}
+                        <strong>Rémunération :</strong> {{ $candidature->offreStage->remuneration ? number_format($candidature->offreStage->remuneration, 2, ',', ' ') . ' €/mois' : 'Non renseignée' }}
                     </div>
                     
                     <div class="info-item">
-                        <strong>Publié par :</strong> {{ $candidature->offreStage?->rh?->nom ?? '' }} {{ $candidature->offreStage?->rh?->prenom ?? 'Non spécifié' }}
+                        <strong>Publié par :</strong> {{ $candidature->offreStage->rh->nom }} {{ $candidature->offreStage->rh->prenom }}
                     </div>
                 </div>
             </div>
@@ -199,7 +199,24 @@
                     </div>
                 </div>
                 
-                            </div>
+                <div class="col-md-4">
+                    <div class="document-card">
+                        <div class="text-center p-3">
+                            <i class="fas fa-briefcase fa-3x text-secondary mb-2"></i>
+                            <h6>Portfolio</h6>
+                            @if($candidature->portfolio_path)
+                                <a href="{{ asset('storage/' . $candidature->portfolio_path) }}" 
+                                   target="_blank" 
+                                   class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i> Voir
+                                </a>
+                            @else
+                                <span class="text-muted">Non fourni</span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -881,7 +898,7 @@ function toggleLettreMotivation() {
                     <strong>Candidat :</strong> {{ $candidature->nom }} {{ $candidature->prenom }}
                 </div>
                 <div class="mb-3">
-                    <strong>Offre :</strong> {{ $candidature->offreStage?->titre ?? 'Offre non spécifiée' }}
+                    <strong>Offre :</strong> {{ $candidature->offreStage->titre }}
                 </div>
                 <hr>
                 <div class="lettre-motivation-content">

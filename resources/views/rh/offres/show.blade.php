@@ -41,7 +41,7 @@
                         <div class="col-md-6">
                             <div class="info-item">
                                 <strong>Secteur :</strong> 
-                                <span class="badge bg-info">{{ \App\Models\Secteur::find($offre->secteur_id)?->nom ?? 'Non spécifié' }}</span>
+                                <span class="badge bg-info">{{ $secteurs[$offre->secteur] ?? $offre->secteur }}</span>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -50,7 +50,13 @@
                                 <i class="fas fa-map-marker-alt text-danger"></i> {{ $offre->lieu }}
                             </div>
                         </div>
-                                                <div class="col-md-6">
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <strong>Durée :</strong> 
+                                <span class="badge bg-primary">{{ $offre->duree_formatee }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
                             <div class="info-item">
                                 <strong>Rémunération :</strong> 
                                 <span class="fw-bold text-success">{{ $offre->remuneration_formatee }}</span>
@@ -72,24 +78,24 @@
 
                     <div class="info-item">
                         <strong>Statut :</strong> 
-                        <span class="badge bg-{{ $offre->statut === 'publiee' ? 'success' : ($offre->statut === 'brouillon' ? 'warning' : ($offre->statut === 'affectee' ? 'info' : 'danger')) }}">
-                            {{ $offre->statut === 'publiee' ? '✅ Publiée' : ($offre->statut === 'brouillon' ? '📝 Brouillon' : ($offre->statut === 'affectee' ? '🎯 Affectée' : '❌ Clôturée')) }}
+                        <span class="badge bg-{{ $offre->statut === 'publiee' ? 'success' : ($offre->statut === 'brouillon' ? 'warning' : 'danger') }}">
+                            {{ $offre->statut === 'publiee' ? '✅ Publiée' : ($offre->statut === 'brouillon' ? '📝 Brouillon' : '❌ Clôturée') }}
                         </span>
                     </div>
                 </div>
                 
                 <div class="col-md-4">
                     <div class="text-center">
-                        @if($offre->entreprise?->logo_path)
-                            <img src="{{ asset('storage/' . $offre->entreprise?->logo_path) }}" 
-                                 alt="{{ $offre->entreprise?->nom }}" 
+                        @if($offre->entreprise->logo_path)
+                            <img src="{{ asset('storage/' . $offre->entreprise->logo_path) }}" 
+                                 alt="{{ $offre->entreprise->nom }}" 
                                  class="img-fluid mb-3" 
                                  style="max-height: 100px; object-fit: contain;">
                         @endif
-                        <h5 class="fw-bold">{{ $offre->entreprise?->nom ?? 'Entreprise non spécifiée' }}</h5>
-                        <p class="text-muted">{{ $offre->entreprise?->secteur_activite ?? 'Secteur non spécifié' }}</p>
+                        <h5 class="fw-bold">{{ $offre->entreprise->nom }}</h5>
+                        <p class="text-muted">{{ $offre->entreprise->secteur_activite }}</p>
                         <p class="text-muted small">
-                            <i class="fas fa-map-marker-alt"></i> {{ $offre->entreprise?->adresse ?? 'Adresse non spécifiée' }}
+                            <i class="fas fa-map-marker-alt"></i> {{ $offre->entreprise->adresse_complete }}
                         </p>
                     </div>
                 </div>
@@ -190,9 +196,12 @@
                                 </button>
                             </form>
                         @elseif($offre->statut === 'publiee')
-                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cloturerOffreModal">
-                                <i class="fas fa-times"></i> Clôturer
-                            </button>
+                            <form method="POST" action="{{ route('rh.offres.cloturer', $offre) }}" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-times"></i> Clôturer
+                                </button>
+                            </form>
                         @endif
                     </div>
                 </div>
@@ -405,51 +414,4 @@ h3 {
     }
 }
 </style>
-
-<!-- Modal de clôture d'offre -->
-<div class="modal fade" id="cloturerOffreModal" tabindex="-1" aria-labelledby="cloturerOffreModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="cloturerOffreModalLabel">
-                    <i class="fas fa-times-circle text-danger"></i> Clôturer l'offre
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="POST" action="{{ route('rh.offres.cloturer', $offre) }}">
-                @csrf
-                <div class="modal-body">
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <strong>Attention :</strong> Vous êtes sur le point de clôturer cette offre. Plus aucune candidature ne pourra être soumise.
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="notification_cloture" class="form-label">
-                            <i class="fas fa-bell"></i> Notification de clôture *
-                        </label>
-                        <textarea class="form-control" 
-                                  id="notification_cloture" 
-                                  name="notification_cloture" 
-                                  rows="4" 
-                                  placeholder="Précisez la raison de la clôture de cette offre..."
-                                  required></textarea>
-                        <small class="text-muted">
-                            Cette notification sera visible par les candidats et les utilisateurs concernés.
-                        </small>
-                    </div>
-                    
-                                    </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times"></i> Annuler
-                    </button>
-                    <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-check"></i> Confirmer la clôture
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 @endsection

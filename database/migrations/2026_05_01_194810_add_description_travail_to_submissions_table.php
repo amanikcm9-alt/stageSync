@@ -11,8 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('candidatures', function (Blueprint $table) {
-            $table->string('lettre_motivation_path')->nullable()->change();
+        Schema::table('submissions', function (Blueprint $table) {
+            $table->text('description_travail')->nullable();
+            $table->text('commentaires_stagiaire')->nullable();
         });
     }
 
@@ -21,8 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('candidatures', function (Blueprint $table) {
-            $table->string('lettre_motivation_path')->nullable(false)->change();
+        Schema::table('submissions', function (Blueprint $table) {
+            $table->dropColumn(['description_travail', 'commentaires_stagiaire']);
         });
     }
 };

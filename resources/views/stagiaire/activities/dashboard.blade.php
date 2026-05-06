@@ -51,7 +51,6 @@
                 </div>
             </div>
         </div>
-        </div>
         <div class="col-md-2">
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
@@ -67,7 +66,7 @@
         <div class="col-md-3">
             <a href="{{ route('stagiaire.activities.index') }}" class="card border-0 shadow-sm text-decoration-none">
                 <div class="card-body text-center">
-                    <div class="text-primary mb-2">
+                    <div class="text-primary mb-2" style="margin-top: 35px;">
                         <i class="fas fa-tasks fa-2x"></i>
                     </div>
                     <h5 class="card-title">Mes Activités</h5>
@@ -79,7 +78,7 @@
         <div class="col-md-3">
             <a href="{{ route('stagiaire.evaluations.index') }}" class="card border-0 shadow-sm text-decoration-none">
                 <div class="card-body text-center">
-                    <div class="text-success mb-2">
+                    <div class="text-success mb-2" style="margin-top: 35px;">
                         <i class="fas fa-star fa-2x"></i>
                     </div>
                     <h5 class="card-title">Mes Évaluations</h5>
@@ -91,7 +90,7 @@
         <div class="col-md-3">
             <div class="card border-0 shadow-sm cursor-pointer" onclick="toggleEncadrants()">
                 <div class="card-body text-center">
-                    <div class="text-warning mb-2">
+                    <div class="text-warning mb-2" style="margin-top: 35px;">
                         <i class="fas fa-chalkboard-teacher fa-2x"></i>
                     </div>
                     <h5 class="card-title">Mes Encadrants</h5>
@@ -103,7 +102,7 @@
         <div class="col-md-3">
             <div class="card border-0 shadow-sm cursor-pointer" onclick="toggleOffre()">
                 <div class="card-body text-center">
-                    <div class="text-info mb-2">
+                    <div class="text-info mb-2" style="margin-top: 25px;">
                         <i class="fas fa-briefcase fa-2x"></i>
                     </div>
                     <h5 class="card-title">Mon Offre</h5>
@@ -114,67 +113,7 @@
         </div>
     </div>
 
-    <!-- Section Notifications -->
-    <div class="card border-0 shadow-sm mb-3 notifications-section">
-        <div class="card-header bg-info text-white">
-            <h6 class="mb-0">
-                <i class="fas fa-bell"></i> Notifications Récentes
-                @if(is_array($notifications) && count($notifications) > 0)
-                <span class="badge bg-danger ms-2">{{ count($notifications) }}</span>
-                @endif
-            </h6>
-        </div>
-        <div class="card-body">
-            @if(is_array($notifications) && count($notifications) > 0)
-                <div class="row">
-                    @foreach($notifications->take(6) as $notification)
-                    <div class="col-md-6 mb-2">
-                        <div class="card border-0 shadow-sm h-100 notification-card" data-notification-id="{{ $notification->id }}">
-                            <div class="card-body p-2">
-                                <div class="d-flex align-items-start">
-                                    <div class="avatar-sm bg-info text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px;">
-                                        {{ strtoupper(substr($notification->sender->prenom, 0, 1)) }}{{ strtoupper(substr($notification->sender->nom, 0, 1)) }}
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <div class="fw-bold tiny">{{ $notification->sender->prenom }} {{ $notification->sender->nom }}</div>
-                                        <div class="tiny text-muted mb-1">{{ $notification->message }}</div>
-                                        @if($notification->activity)
-                                        <div class="tiny">
-                                            <span class="badge bg-primary">Activité: {{ $notification->activity->titre }}</span>
-                                        </div>
-                                        @endif
-                                        <div class="tiny text-muted mt-1">
-                                            <i class="fas fa-clock"></i> {{ $notification->created_at->diffForHumans() }}
-                                        </div>
-                                    </div>
-                                    <div class="ms-2">
-                                        @if(!$notification->read)
-                                        <span class="badge bg-danger rounded-circle p-1" style="width: 8px; height: 8px;"></span>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @endforeach
-                </div>
-                @if($notifications->count() > 6)
-                <div class="text-center mt-2">
-                    <a href="#" class="btn btn-outline-info btn-sm">
-                        <i class="fas fa-eye"></i> Voir toutes les notifications
-                    </a>
-                </div>
-                @endif
-            @else
-                <div class="text-center py-3">
-                    <i class="fas fa-bell-slash fa-2x text-muted mb-2"></i>
-                    <h6 class="text-muted small">Aucune notification</h6>
-                    <p class="text-muted small">Vous n'avez pas reçu de nouvelles notifications.</p>
-                </div>
-            @endif
-        </div>
-    </div>
-
+    
     <!-- Section Mes Encadrants -->
     <div id="encadrants-section" style="display: none;">
         <div class="card border-0 shadow-sm mb-3">
@@ -1174,18 +1113,6 @@ function discuterActiviteModal(activityId) {
 
 @section('scripts')
 <script>
-// Fonction pour afficher/masquer les notifications
-function toggleNotifications() {
-    const notificationsSection = document.querySelector('.notifications-section');
-    if (notificationsSection) {
-        notificationsSection.scrollIntoView({ behavior: 'smooth' });
-        // Ajouter un effet de surbrillance temporaire
-        notificationsSection.classList.add('border-info', 'border-2');
-        setTimeout(() => {
-            notificationsSection.classList.remove('border-info', 'border-2');
-        }, 2000);
-    }
-}
 
 // Fonction pour afficher/masquer la section des encadrants
 function toggleEncadrants() {
@@ -1423,35 +1350,5 @@ function sendMessageToEncadrant(encadrantId) {
     });
 }
 
-// Fonction pour marquer toutes les notifications comme lues
-function marquerToutesLues() {
-    const csrfToken = document.querySelector('meta[name="csrf-token"]');
-    if (!csrfToken) {
-        alert('ERREUR: Meta tag CSRF token non trouvé !');
-        return;
-    }
-    
-    const token = csrfToken.getAttribute('content');
-    
-    fetch('/notifications/mark-all-read', {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': token,
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload(); // Recharger la page pour voir les notifications mises à jour
-        } else {
-            alert('Erreur: ' + (data.error || 'Erreur lors de la mise à jour des notifications'));
-        }
-    })
-    .catch(error => {
-        console.error('Erreur:', error);
-        alert('Erreur lors de la mise à jour des notifications.');
-    });
-}
 </script>
 @endsection

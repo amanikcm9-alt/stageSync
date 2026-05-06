@@ -63,11 +63,6 @@ class CandidatureController extends Controller
     {
         $query = Candidature::with(['offreStage.entreprise', 'offreStage.rh']);
 
-        // Par défaut, afficher uniquement les candidatures en cours
-        if (!$request->filled('statut')) {
-            $query->where('statut', 'en_cours');
-        }
-
         // Filtres
         if ($request->filled('search')) {
             $search = $request->search;
@@ -79,30 +74,9 @@ class CandidatureController extends Controller
             });
         }
 
-        if ($request->filled('statut') && $request->statut !== 'toutes') {
-            if ($request->statut === 'archive') {
-                $query->whereNotNull('archived_at');
-            } else {
-                $query->where('statut', $request->statut);
-            }
+        if ($request->filled('statut')) {
+            $query->where('statut', $request->statut);
         }
-
-        $candidatures = $query->orderBy('created_at', 'desc')->paginate(15);
-
-        // Récupérer les entretiens qui ne sont ni terminés ni annulés pour l'affichage
-        $entretiens = \App\Models\Entretien::with(['candidature.offreStage.entreprise'])
-            ->whereNotIn('statut', ['termine', 'annule'])
-            ->orderBy('date_entretien', 'desc')
-            ->orderBy('heure_entretien', 'desc')
-            ->limit(5)
-            ->get();
-
-        $statuts = [
-            'en_cours' => 'En cours',
-            'accepte' => 'Acceptée',
-            'refuse' => 'Refusée',
-            'archive' => 'Archivée'
-        ];
 
         if ($request->filled('offre_id')) {
             $query->where('offre_stage_id', $request->offre_id);
@@ -127,9 +101,16 @@ class CandidatureController extends Controller
         }
         // Si le filtre n'est pas spécifié, on affiche tout par défaut (actives + archives)
 
+        $candidatures = $query->latest()->paginate(15);
         $offres = OffreStage::with('entreprise')->pluck('titre', 'id');
+        $statuts = [
+            'recue' => 'Reçue',
+            'en_cours' => 'En cours',
+            'accepte' => 'Acceptée',
+            'refuse' => 'Refusée'
+        ];
 
-        return view($this->getViewPath('index'), compact('candidatures', 'entretiens', 'offres', 'statuts'));
+        return view($this->getViewPath('index'), compact('candidatures', 'offres', 'statuts'));
     }
 
     public function show(Candidature $candidature)
@@ -141,22 +122,13 @@ class CandidatureController extends Controller
 
     public function accepter(Request $request, Candidature $candidature)
     {
-        // Logs de débogage pour identifier le problème
-        Log::info("=== DÉBUT MÉTHODE ACCEPTER ===");
-        Log::info("Candidature ID: " . $candidature->id);
-        Log::info("Candidature object: " . ($candidature ? 'exists' : 'NULL'));
-        
-        if ($candidature) {
-            Log::info("Candidature nom: '" . ($candidature->nom ?? 'NULL') . "'");
-            Log::info("Candidature prénom: '" . ($candidature->prenom ?? 'NULL') . "'");
-            Log::info("Candidature email: '" . ($candidature->email ?? 'NULL') . "'");
-            Log::info("Candidature téléphone: '" . ($candidature->telephone ?? 'NULL') . "'");
-        }
-
         $request->validate([
             'commentaire' => 'nullable|string|max:1000'
         ]);
 
+        // Vérifier si le candidat a déjà un compte utilisateur
+        $existingUser = User::where('email', $candidature->email)->first();
+        
         // Récupérer le rôle stagiaire de manière sécurisée
         $stagiaireRole = Role::where('name', 'stagiaire')->first();
         if (!$stagiaireRole) {
@@ -164,9 +136,6 @@ class CandidatureController extends Controller
             return redirect()->back()
                 ->with('error', 'Erreur : Le rôle stagiaire n\'existe pas. Veuillez contacter l\'administrateur.');
         }
-        
-        // Vérifier si un utilisateur avec cet email existe déjà
-        $existingUser = User::where('email', $candidature->email)->first();
         
         if (!$existingUser) {
             // Créer un nouveau compte stagiaire
@@ -176,22 +145,11 @@ class CandidatureController extends Controller
             Log::info("Rôle stagiaire ID : {$stagiaireRole->id}");
             
             try {
-                // Vérifications supplémentaires pour éviter les erreurs de null
-                $nom = $candidature->nom ?? 'Nom';
-                $prenom = $candidature->prenom ?? 'Prénom';
-                $email = $candidature->email ?? '';
-                $telephone = $candidature->telephone ?? null;
-                
-                // S'assurer que l'email n'est pas vide
-                if (empty($email)) {
-                    throw new \Exception('L\'email de la candidature est invalide');
-                }
-                
                 $user = User::create([
-                    'nom' => $nom,
-                    'prenom' => $prenom,
-                    'email' => $email,
-                    'telephone' => $telephone,
+                    'nom' => $candidature->nom,
+                    'prenom' => $candidature->prenom,
+                    'email' => $candidature->email,
+                    'telephone' => $candidature->telephone ?? null,
                     'password' => bcrypt($password),
                     'role_id' => $stagiaireRole->id,
                     'email_verified_at' => now(),
@@ -215,18 +173,11 @@ class CandidatureController extends Controller
                     'commentaire' => $request->commentaire
                 ]);
 
-                // Mettre à jour le statut de l'offre à "affectée"
-                $offre = $candidature->offreStage;
-                if ($offre) {
-                    $offre->update(['statut' => 'affectee']);
-                }
-
                 // Envoyer email avec identifiants
                 $emailEnvoye = $this->smsService->envoyerIdentifiantsConnexion($candidature, $candidature->email, $password);
 
                 $message = 'La candidature a été acceptée avec succès.' . ($emailEnvoye ? ' Email envoyé au candidat avec succès.' : ' Échec d\'envoi email.');
                 $message .= " Compte stagiaire créé (ID: {$user->id}) et ajouté à la liste des utilisateurs.";
-                $message .= " L'offre a été marquée comme affectée.";
 
                 return redirect()->route($this->getRouteName('index'))
                     ->with('success', $message);
@@ -236,8 +187,9 @@ class CandidatureController extends Controller
                 return redirect()->back()
                     ->with('error', 'Erreur lors de la création du compte stagiaire : ' . $e->getMessage());
             }
+            
         } else {
-            // Utilisateur existe déjà - le mettre à jour vers le rôle stagiaire
+            // Mettre à jour le rôle vers stagiaire si nécessaire
             Log::info("Utilisateur existant trouvé : {$existingUser->id}, rôle actuel : " . ($existingUser->role ? $existingUser->role->name : 'non défini'));
             
             try {
@@ -259,33 +211,11 @@ class CandidatureController extends Controller
                     'commentaire' => $request->commentaire
                 ]);
 
-                // Mettre à jour le statut de l'offre à "affectée"
-                $offre = $candidature->offreStage;
-                if ($offre) {
-                    $offre->update(['statut' => 'affectee']);
-                }
-
-                // Envoyer email d'acceptation
-                try {
-                    Log::info("Envoi email d'acceptation pour candidature ID: " . $candidature->id);
-                    $emailEnvoye = $this->smsService->envoyerAcceptationCandidature($candidature);
-                    Log::info("Email d'acceptation envoyé: " . ($emailEnvoye ? 'OUI' : 'NON'));
-                } catch (\Exception $e) {
-                    Log::error("ERREUR lors de l'envoi email d'acceptation: " . $e->getMessage());
-                    $emailEnvoye = false;
-                }
-
-                // Supprimer l'entretien associé après acceptation
-                $entretienAssocie = \App\Models\Entretien::where('candidature_id', $candidature->id)->first();
-                if ($entretienAssocie) {
-                    $entretienAssocie->delete();
-                    Log::info("Entretien ID {$entretienAssocie->id} supprimé après acceptation de la candidature");
-                }
+                // Envoyer email d'acceptation avec identifiants (mot de passe mis à jour)
+                $emailEnvoye = $this->smsService->envoyerAcceptationCandidature($candidature);
 
                 $message = 'La candidature a été acceptée avec succès.' . ($emailEnvoye ? ' Email envoyé au candidat avec succès.' : ' Échec d\'envoi email.');
                 $message .= ' Utilisateur existant mis à jour vers le rôle stagiaire.';
-                $message .= ' L\'offre a été marquée comme affectée.';
-                $message .= ' L\'entretien a été supprimé de la liste.';
 
                 return redirect()->route($this->getRouteName('index'))
                     ->with('success', $message);
@@ -300,86 +230,36 @@ class CandidatureController extends Controller
 
     public function refuser(Request $request, Candidature $candidature)
     {
-        // Logs de débogage pour la méthode refuser
-        Log::info("=== DÉBUT MÉTHODE REFUSER ===");
-        Log::info("Candidature ID: " . $candidature->id);
-        Log::info("Candidature object: " . ($candidature ? 'exists' : 'NULL'));
-        
-        if ($candidature) {
-            Log::info("Candidature nom: '" . ($candidature->nom ?? 'NULL') . "'");
-            Log::info("Candidature prénom: '" . ($candidature->prenom ?? 'NULL') . "'");
-            Log::info("Candidature email: '" . ($candidature->email ?? 'NULL') . "'");
-        }
-
         $request->validate([
             'motif_refus' => 'nullable|string|max:1000'
         ]);
 
-        try {
-            $candidature->update([
-                'statut' => 'refuse',
-                'date_decision' => now(),
-                'motif_refus' => $request->motif_refus
-            ]);
+        $candidature->update([
+            'statut' => 'refuse',
+            'date_decision' => now(),
+            'motif_refus' => $request->motif_refus
+        ]);
 
-            // Mettre à jour le statut de l'offre à "publiee" (rendre l'offre disponible à nouveau)
-            $offre = $candidature->offreStage;
-            if ($offre) {
-                $offre->update(['statut' => 'publiee']);
-                Log::info("Offre ID {$offre->id} remise en statut 'publiee' après refus de la candidature");
-            }
+        // Envoyer email de refus
+        $emailEnvoye = $this->smsService->envoyerRefusCandidature($candidature);
 
-            // Envoyer email de refus avec vérifications
-            try {
-                Log::info("Envoi email de refus pour candidature ID: " . $candidature->id);
-                $emailEnvoye = $this->smsService->envoyerRefusCandidature($candidature);
-                Log::info("Email de refus envoyé: " . ($emailEnvoye ? 'OUI' : 'NON'));
-            } catch (\Exception $e) {
-                Log::error("ERREUR lors de l'envoi email de refus: " . $e->getMessage());
-                $emailEnvoye = false;
-            }
-
-            // Supprimer l'entretien associé après refus
-                $entretienAssocie = \App\Models\Entretien::where('candidature_id', $candidature->id)->first();
-                if ($entretienAssocie) {
-                    $entretienAssocie->delete();
-                    Log::info("Entretien ID {$entretienAssocie->id} supprimé après refus de la candidature");
-                }
-
-                return redirect()->route($this->getRouteName('index'))
-                    ->with('success', 'La candidature a été refusée.' . ($emailEnvoye ? ' Email envoyé au candidat.' : ' Échec d\'envoi email.') . ' L\'entretien a été supprimé de la liste.');
-                
-        } catch (\Exception $e) {
-            Log::error("ERREUR lors du refus de la candidature : " . $e->getMessage());
-            return redirect()->back()
-                ->with('error', 'Erreur lors du refus de la candidature : ' . $e->getMessage());
-        }
+        return redirect()->route($this->getRouteName('index'))
+            ->with('success', 'La candidature a été refusée.' . ($emailEnvoye ? ' Email envoyé au candidat.' : ' Échec d\'envoi email.'));
     }
 
     public function planifierEntretien(Request $request, Candidature $candidature)
     {
         $request->validate([
-            'date_entretien' => 'required|date|after_or_equal:today',
+            'date_entretien' => 'required|date|after:now',
             'heure_entretien' => 'required|string',
             'lieu_entretien' => 'required|string',
             'notes_entretien' => 'nullable|string|max:1000'
         ]);
 
-        // Créer l'entretien dans la table entretiens
-        \App\Models\Entretien::create([
-            'candidature_id' => $candidature->id,
-            'date_entretien' => $request->date_entretien,
-            'heure_entretien' => $request->date_entretien . ' ' . $request->heure_entretien,
-            'lieu_entretien' => $request->lieu_entretien,
-            'notes_entretien' => $request->notes_entretien,
-            'statut' => \App\Models\Entretien::STATUT_PLANIFIE
-        ]);
-
-        // Mettre à jour la candidature
         $candidature->update([
             'statut' => 'en_cours',
             'date_entretien' => $request->date_entretien,
-            'heure_entretien' => $request->date_entretien . ' ' . $request->heure_entretien,
+            'heure_entretien' => $request->heure_entretien,
             'lieu_entretien' => $request->lieu_entretien,
             'notes_entretien' => $request->notes_entretien
         ]);

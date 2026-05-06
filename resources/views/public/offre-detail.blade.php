@@ -26,20 +26,20 @@
                 <div class="card-header bg-white border-0 py-3">
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center">
-                            @if($offre->entreprise?->logo_path)
+                            @if($offre->entreprise->logo_path)
                                 <img src="{{ asset('storage/' . $offre->entreprise->logo_path) }}" 
-                                     alt="{{ $offre->entreprise?->nom ?? 'Entreprise' }}" 
+                                     alt="{{ $offre->entreprise->nom }}" 
                                      class="me-3" 
                                      style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px;">
                             @else
                                 <div class="me-3 bg-primary text-white d-flex align-items-center justify-content-center rounded" 
                                      style="width: 40px; height: 40px; font-size: 14px; font-weight: bold;">
-                                    {{ strtoupper(substr($offre->entreprise?->nom ?? 'E', 0, 1)) }}
+                                    {{ strtoupper(substr($offre->entreprise->nom, 0, 1)) }}
                                 </div>
                             @endif
                             <div>
                                 <h5 class="mb-1 fs-5 fw-bold">{{ $offre->titre }}</h5>
-                                <small class="text-muted">{{ $offre->entreprise?->nom ?? 'MW' }}</small>
+                                <small class="text-muted">{{ $offre->entreprise->nom }}</small>
                             </div>
                         </div>
                         <div>
@@ -64,7 +64,14 @@
                                 <div class="fw-bold small">{{ $offre->date_debut->format('d/m/Y') }}</div>
                             </div>
                         </div>
-                                                <div class="col-md-3">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <i class="fas fa-clock text-success mb-2"></i>
+                                <div class="small text-muted">Durée</div>
+                                <div class="fw-bold small">{{ $offre->duree }} semaines</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
                             <div class="text-center">
                                 <i class="fas fa-map-marker-alt text-warning mb-2"></i>
                                 <div class="small text-muted">Lieu</div>
@@ -75,15 +82,7 @@
                             <div class="text-center">
                                 <i class="fas fa-industry text-info mb-2"></i>
                                 <div class="small text-muted">Secteur</div>
-                                <div class="fw-bold small">
-    @if($offre->secteur)
-        {{ $offre->secteur->nom }}
-    @elseif($offre->secteur_id)
-        {{ \App\Models\Secteur::find($offre->secteur_id)?->nom ?? 'Non spécifié' }}
-    @else
-        {{ $offre->secteur ?? 'Non spécifié' }}
-    @endif
-</div>
+                                <div class="fw-bold small">{{ $offre->secteur }}</div>
                             </div>
                         </div>
                     </div>
@@ -104,7 +103,14 @@
                         </div>
                     </div>
 
-                    
+                    <!-- Profil recherché -->
+                    <div class="mb-4">
+                        <h6 class="fs-6 fw-bold mb-2">Profil recherché</h6>
+                        <div class="small text-muted">
+                            {!! nl2br(e($offre->profil_recherche)) !!}
+                        </div>
+                    </div>
+
                     <!-- Informations complémentaires -->
                     @if($offre->remuneration || $offre->avantages)
                         <div class="mb-4">
@@ -152,32 +158,32 @@
                 </div>
                 <div class="card-body p-3">
                     <div class="text-center mb-3">
-                        @if($offre->entreprise?->logo_path)
+                        @if($offre->entreprise->logo_path)
                             <img src="{{ asset('storage/' . $offre->entreprise->logo_path) }}" 
-                                 alt="{{ $offre->entreprise?->nom ?? 'Entreprise' }}" 
+                                 alt="{{ $offre->entreprise->nom }}" 
                                  class="mb-2" 
                                  style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">
                         @else
                             <div class="bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-2 rounded" 
                                  style="width: 80px; height: 80px; font-size: 28px; font-weight: bold;">
-                                {{ strtoupper(substr($offre->entreprise?->nom ?? 'E', 0, 1)) }}
+                                {{ strtoupper(substr($offre->entreprise->nom, 0, 1)) }}
                             </div>
                         @endif
-                        <h6 class="fw-bold small">{{ $offre->entreprise?->nom ?? 'MW' }}</h6>
-                        @if($offre->entreprise?->secteur)
+                        <h6 class="fw-bold small">{{ $offre->entreprise->nom }}</h6>
+                        @if($offre->entreprise->secteur)
                             <small class="text-muted">{{ $offre->entreprise->secteur }}</small>
                         @endif
                     </div>
                     
-                    @if($offre->entreprise?->description)
+                    @if($offre->entreprise->description)
                         <div class="small text-muted">
                             {{ Str::limit(strip_tags($offre->entreprise->description), 150) }}
                         </div>
                     @endif
                     
-                    @if($offre->entreprise?->site_web || $offre->entreprise?->email)
+                    @if($offre->entreprise->site_web || $offre->entreprise->email)
                         <div class="mt-3 pt-3 border-top">
-                            @if($offre->entreprise?->site_web)
+                            @if($offre->entreprise->site_web)
                                 <div class="mb-2">
                                     <a href="{{ $offre->entreprise->site_web }}" 
                                        target="_blank" 
@@ -251,7 +257,7 @@
                                                 </a>
                                             </h6>
                                             <small class="text-muted">
-                                                {{ $autreOffre->entreprise?->nom ?? 'MW' }}<br>
+                                                {{ $autreOffre->entreprise->nom }}<br>
                                                 <i class="fas fa-map-marker-alt"></i> {{ $autreOffre->lieu }}
                                             </small>
                                         </div>

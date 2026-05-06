@@ -32,9 +32,11 @@
                         <div class="col-md-2">
                             <div class="form-floating form-floating-sm">
                                 <select class="form-select form-select-sm" name="statut">
-                                    <option value="en_cours" {{ !request('statut') || request('statut') == 'en_cours' ? 'selected' : '' }}>En cours</option>
-                                    <option value="accepte" {{ request('statut') == 'accepte' ? 'selected' : '' }}>Acceptée</option>
-                                    <option value="refuse" {{ request('statut') == 'refuse' ? 'selected' : '' }}>Refusée</option>
+                                    <option value="">Statut</option>
+                                    <option value="recue" {{ request('statut') == 'recue' ? 'selected' : '' }}">Reçue</option>
+                                    <option value="en_cours" {{ request('statut') == 'en_cours' ? 'selected' : '' }}">En cours</option>
+                                    <option value="acceptee" {{ request('statut') == 'acceptee' ? 'selected' : '' }}">Acceptée</option>
+                                    <option value="refusee" {{ request('statut') == 'refusee' ? 'selected' : '' }}">Refusée</option>
                                 </select>
                                 <label for="statut" class="small">Statut</label>
                             </div>
@@ -105,7 +107,7 @@
                             <td>
                                 @if($candidature->offreStage)
                                     <div class="fw-bold">{{ Str::limit($candidature->offreStage->titre, 30) }}</div>
-                                    <small class="text-muted">{{ $candidature->offreStage->entreprise?->nom ?? 'Entreprise non spécifiée' }}</small>
+                                    <small class="text-muted">{{ $candidature->offreStage->entreprise->nom }}</small>
                                 @else
                                     <div class="fw-bold text-muted">Offre supprimée</div>
                                     <small class="text-muted">-</small>
@@ -116,13 +118,16 @@
                             </td>
                             <td>
                                 @switch($candidature->statut)
+                                    @case('recue')
+                                        <span class="badge bg-warning">Reçue</span>
+                                        @break
                                     @case('en_cours')
                                         <span class="badge bg-info">En cours</span>
                                         @break
-                                    @case('accepte')
+                                    @case('acceptee')
                                         <span class="badge bg-success">Acceptée</span>
                                         @break
-                                    @case('refuse')
+                                    @case('refusee')
                                         <span class="badge bg-danger">Refusée</span>
                                         @break
                                     @default
@@ -149,7 +154,64 @@
                                        class="btn btn-outline-primary btn-sm" title="Voir">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                                                                                                                            </div>
+                                    @if($candidature->statut == 'recue' || $candidature->statut == 'en_cours')
+                                        <form action="{{ route('rh.candidatures.accepter', $candidature) }}" 
+                                              method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="submit" 
+                                                    class="btn btn-outline-success btn-sm" 
+                                                    title="Accepter"
+                                                    onclick="return confirm('Accepter cette candidature ?')">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </form>
+                                        <form action="{{ route('rh.candidatures.refuser', $candidature) }}" 
+                                              method="POST" 
+                                              onsubmit="return confirmRefuser(this, '{{ $candidature->nom }} {{ $candidature->prenom }}')">
+                                            @csrf
+                                            <input type="hidden" name="motif_refus" id="motif_refus_{{ $candidature->id }}">
+                                            <button type="submit" 
+                                                    class="btn btn-outline-danger btn-sm" 
+                                                    title="Refuser">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+                                    @if($candidature->isArchived())
+                                        <form action="{{ route('rh.candidatures.unarchive', $candidature) }}" 
+                                              method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="submit" 
+                                                    class="btn btn-outline-warning btn-sm" 
+                                                    title="Restaurer"
+                                                    onclick="return confirm('Restaurer cette candidature ?')">
+                                                <i class="fas fa-undo"></i>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <form action="{{ route('rh.candidatures.archive', $candidature) }}" 
+                                              method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="submit" 
+                                                    class="btn btn-outline-secondary btn-sm" 
+                                                    title="Archiver"
+                                                    onclick="return confirm('Archiver cette candidature ?')">
+                                                <i class="fas fa-archive"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+                                    <form action="{{ route('rh.candidatures.destroy', $candidature) }}" 
+                                          method="POST" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" 
+                                                class="btn btn-outline-warning btn-sm" 
+                                                title="Supprimer"
+                                                onclick="return confirm('Supprimer la candidature de {{ $candidature->nom }} {{ $candidature->prenom }} ?')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -178,137 +240,6 @@
         @endif
     </div>
 </div>
-
-<!-- Liste des entretiens -->
-<div class="card border-0 shadow-sm mt-4">
-    <div class="card-header bg-light">
-        <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">
-                <i class="fas fa-calendar-check text-primary me-2"></i>
-                Entretiens planifiés
-            </h5>
-            <a href="{{ route('rh.entretiens.index') }}" class="btn btn-outline-primary btn-sm">
-                <i class="fas fa-list"></i> Voir tous les entretiens
-            </a>
-        </div>
-    </div>
-    <div class="card-body">
-        @php
-            $entretiensRecents = \App\Models\Entretien::with(['candidature.offreStage.entreprise'])
-                ->orderBy('date_entretien', 'desc')
-                ->orderBy('heure_entretien', 'desc')
-                ->limit(5)
-                ->get();
-        @endphp
-        
-        @if($entretiensRecents->count() > 0)
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Candidat</th>
-                            <th>Offre</th>
-                            <th>Date/Heure</th>
-                            <th>Lieu</th>
-                            <th>Statut</th>
-                            <th>Évaluation</th>
-                            <th class="text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($entretiensRecents as $entretien)
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" 
-                                             style="width: 32px; height: 32px; font-size: 12px;">
-                                            {{ strtoupper(substr($entretien->candidature->prenom, 0, 1)) }}{{ strtoupper(substr($entretien->candidature->nom, 0, 1)) }}
-                                        </div>
-                                        <div>
-                                            <div class="fw-semibold">{{ $entretien->candidature->nom }} {{ $entretien->candidature->prenom }}</div>
-                                            <small class="text-muted">{{ $entretien->candidature->email }}</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div>
-                                        <div class="fw-semibold">{{ $entretien->candidature->offreStage?->titre ?? 'N/A' }}</div>
-                                        <small class="text-muted">{{ $entretien->candidature->offreStage?->entreprise?->nom ?? 'N/A' }}</small>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div>
-                                        <div class="fw-semibold">{{ $entretien->date_entretien->format('d/m/Y') }}</div>
-                                        <small class="text-muted">{{ $entretien->heure_entretien->format('H:i') }}</small>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-light text-dark">
-                                        <i class="fas fa-map-marker-alt me-1"></i>
-                                        {{ $entretien->lieu_entretien }}
-                                    </span>
-                                </td>
-                                <td>
-                                    @switch($entretien->statut)
-                                        @case('planifie')
-                                            <span class="badge bg-info">
-                                                <i class="fas fa-clock me-1"></i>{{ $entretien->statut_label }}
-                                            </span>
-                                            @break
-                                        @case('en_cours')
-                                            <span class="badge bg-warning">
-                                                <i class="fas fa-spinner me-1"></i>{{ $entretien->statut_label }}
-                                            </span>
-                                            @break
-                                        @case('termine')
-                                            <span class="badge bg-success">
-                                                <i class="fas fa-check me-1"></i>{{ $entretien->statut_label }}
-                                            </span>
-                                            @break
-                                        @case('annule')
-                                            <span class="badge bg-danger">
-                                                <i class="fas fa-times me-1"></i>{{ $entretien->statut_label }}
-                                            </span>
-                                            @break
-                                    @endswitch
-                                </td>
-                                <td>
-                                    @if($entretien->isEvalue())
-                                        <div>
-                                            <span class="badge bg-primary">{{ $entretien->note_evaluation }}/20</span>
-                                            <small class="text-muted d-block">{{ $entretien->note_label }}</small>
-                                        </div>
-                                    @else
-                                        <span class="badge bg-secondary">Non évalué</span>
-                                    @endif
-                                </td>
-                                <td class="text-center">
-                                    <a href="{{ route('rh.entretiens.show', $entretien) }}" 
-                                       class="btn btn-outline-primary btn-sm" title="Voir détails">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="text-center mt-3">
-                <a href="{{ route('rh.entretiens.index') }}" class="btn btn-outline-primary">
-                    <i class="fas fa-list"></i> Voir tous les entretiens
-                </a>
-            </div>
-        @else
-            <div class="text-center py-4">
-                <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
-                <div class="text-muted">Aucun entretien planifié</div>
-                <small class="text-muted">Les entretiens planifiés apparaîtront ici</small>
-            </div>
-        @endif
-    </div>
-</div>
-
 
 <style>
 .table th {

@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('candidatures', function (Blueprint $table) {
-            $table->string('dernier_diplome')->nullable()->change();
+        Schema::table('activities', function (Blueprint $table) {
+            $table->string('statut', 20)->change();
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('candidatures', function (Blueprint $table) {
-            $table->string('dernier_diplome')->nullable(false)->change();
+        Schema::table('activities', function (Blueprint $table) {
+            $table->string('statut', 10)->change();
         });
     }
 };

@@ -321,8 +321,35 @@ class ActivityController extends Controller
     {
         $stagiaire = Auth::user();
         
-        // Activités assignées au stagiaire
+        // Activités assignées au stagiaire (exclure les refusées et archivées)
         $activities = Activity::where('stagiaire_id', $stagiaire->id)
+            ->whereNotIn('statut', ['refusee', 'archivée'])
+            ->with(['encadrant', 'submissions', 'documents'])
+            ->latest()
+            ->get();
+            
+        // Modifier automatiquement les activités 'assignée' en 'en cours'
+        \Log::info('Début mise à jour automatique des activités assignées pour stagiaire ID: ' . $stagiaire->id);
+        
+        foreach ($activities as $activity) {
+            \Log::info('Vérification activité ID: ' . $activity->id . ', statut actuel: ' . $activity->statut);
+            
+            if ($activity->statut === 'assignee') {
+                \Log::info('Mise à jour automatique de activité ' . $activity->id . ' de assignee vers en_cours');
+                
+                $updated = \DB::table('activities')
+                    ->where('id', $activity->id)
+                    ->update(['statut' => 'en_cours', 'updated_at' => now()]);
+                    
+                \Log::info('Résultat mise à jour automatique: ' . ($updated ? 'SUCCÈS' : 'ÉCHEC') . ' pour activité ID: ' . $activity->id);
+            } else {
+                \Log::info('Activité ' . $activity->id . ' avec statut: ' . $activity->statut . ' (pas de changement nécessaire)');
+            }
+        }
+        
+        // Rafraîchir les activités avec les statuts mis à jour
+        $activities = Activity::where('stagiaire_id', $stagiaire->id)
+            ->whereNotIn('statut', ['refusee', 'archivée'])
             ->with(['encadrant', 'submissions', 'documents'])
             ->latest()
             ->get();
@@ -377,6 +404,7 @@ class ActivityController extends Controller
         $activities = Activity::where('encadrant_id', $encadrant->id)
             ->with(['stagiaire', 'submissions', 'documents'])
             ->when($request->statut, fn($q, $s) => $q->where('statut', $s))
+            ->when(!$request->statut, fn($q) => $q->where('statut', '!=', 'archivée'))
             ->when($request->priorite, fn($q, $p) => $q->where('priorite', $p))
             ->when($request->stagiaire_id, fn($q, $sid) => $q->where('stagiaire_id', $sid))
             ->latest()
@@ -561,7 +589,7 @@ class ActivityController extends Controller
         // Créer les notifications
         $this->creerNotificationsActivite($activity, $user, 'creation');
 
-        return redirect()->route('activities.show', $activity)
+        return redirect()->route('encadrant.activities.index')
             ->with('success', 'Activité créée avec succès');
     }
 
@@ -814,6 +842,9 @@ class ActivityController extends Controller
     {
         $user = Auth::user();
         
+        // DEBUG: Log pour tracer l'exécution
+        \Log::info('demanderInformation appelé pour activité ID: ' . $activity->id . ', statut actuel: ' . $activity->statut);
+        
         if ($user->role->name !== 'stagiaire' || $activity->stagiaire_id !== $user->id) {
             return redirect()->back()->with('error', 'Accès non autorisé');
         }
@@ -822,17 +853,68 @@ class ActivityController extends Controller
             'message' => 'required|string|max:1000',
         ]);
         
-        // Créer une discussion avec l'encadrant
+        // Changer le statut de l'activité à 'demander_info'
+        \DB::table('activities')
+            ->where('id', $activity->id)
+            ->update(['statut' => 'demander_info', 'updated_at' => now()]);
+        
+        // Créer uniquement le message de discussion pour la conversation
         Discussion::create([
             'activity_id' => $activity->id,
             'sender_id' => $user->id,
             'receiver_id' => $activity->encadrant_id,
-            'message' => "Demande d'information pour l'activité '{$activity->titre}' : {$request->message}",
-            'type' => 'demande_info',
+            'message' => $request->message,
+            'type' => 'discussion',
             'read' => false
         ]);
         
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Demande d\'information envoyée avec succès',
+                'statut' => 'demander_info'
+            ]);
+        }
+        
         return redirect()->back()->with('success', 'Demande d\'information envoyée à l\'encadrant');
+    }
+
+    /**
+     * Changer le statut d'une activité
+     */
+    public function changeStatut(Request $request, Activity $activity)
+    {
+        $user = Auth::user();
+        
+        // Vérifier que l'utilisateur est le stagiaire de l'activité
+        if ($user->role->name !== 'stagiaire' || $activity->stagiaire_id !== $user->id) {
+            return response()->json(['error' => 'Accès non autorisé'], 403);
+        }
+        
+        $request->validate([
+            'statut' => 'required|string|in:en_cours,demander_info'
+        ]);
+        
+        // Mettre à jour le statut
+        $updated = \DB::table('activities')
+            ->where('id', $activity->id)
+            ->update([
+                'statut' => $request->statut,
+                'updated_at' => now()
+            ]);
+            
+        if ($updated) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Statut changé avec succès',
+                'statut' => $request->statut
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'error' => 'Erreur lors du changement de statut'
+            ], 500);
+        }
     }
 
     public function proposerActivite(Request $request)
@@ -1634,5 +1716,49 @@ public function marquerNotificationsLues(Request $request)
         'message' => 'Notifications marquées comme lues'
     ]);
 }
+
+    /**
+     * Archiver une activité (changer le statut au lieu de supprimer)
+     */
+    public function archiverActivite(Activity $activity)
+    {
+        $user = Auth::user();
+        
+        // Vérifier si l'utilisateur est un encadrant et propriétaire de l'activité
+        if ($user->role->name !== 'encadrant' || $activity->encadrant_id !== $user->id) {
+            return response()->json(['success' => false, 'error' => 'Accès non autorisé'], 403);
+        }
+        
+        try {
+            // Changer le statut à "archivée" au lieu de supprimer
+            $activity->statut = 'archivée';
+            $activity->save();
+            
+            \Log::info('Activité archivée avec succès', [
+                'activity_id' => $activity->id,
+                'user_id' => $user->id,
+                'ancien_statut' => $activity->getOriginal('statut'),
+                'nouveau_statut' => 'archivée'
+            ]);
+            
+            return response()->json([
+                'success' => true, 
+                'message' => 'Activité archivée avec succès',
+                'redirect' => route('encadrant.activities.index')
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors de l\'archivage de l\'activité', [
+                'activity_id' => $activity->id,
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false, 
+                'error' => 'Erreur lors de l\'archivage de l\'activité'
+            ], 500);
+        }
+    }
 }
 

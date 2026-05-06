@@ -29,9 +29,6 @@ class PublicController extends Controller
 
     public function accueil()
     {
-        // Charger l'entreprise principale (première entreprise active)
-        $entreprise = Entreprise::active()->first();
-
         // Dernières offres publiées
         $dernieresOffres = OffreStage::with('entreprise')
             ->publiee()
@@ -48,7 +45,7 @@ class PublicController extends Controller
             'offres_par_secteur' => $this->getOffresParSecteur()
         ];
 
-        return view('public.accueil', compact('dernieresOffres', 'stats', 'entreprise'));
+        return view('public.accueil', compact('dernieresOffres', 'stats'));
     }
 
     public function offres(Request $request)
@@ -76,7 +73,7 @@ class PublicController extends Controller
             $query->where('description', 'like', "%{$request->type_stage}%");
         }
 
-        $offres = $query->with('entreprise')->latest()->paginate(12);
+        $offres = $query->latest()->paginate(12);
         $secteurs = $this->getSecteursDisponibles();
         $typesStage = $this->getTypesStage();
 
@@ -90,7 +87,7 @@ class PublicController extends Controller
             abort(404);
         }
 
-        $offre->load(['entreprise', 'secteur']);
+        $offre->load('entreprise');
         $autresOffres = OffreStage::with('entreprise')
             ->where('id', '!=', $offre->id)
             ->publiee()
@@ -237,7 +234,7 @@ class PublicController extends Controller
             'message' => $request->message,
             
             // Statut
-            'statut' => 'en_cours'
+            'statut' => 'recue'
         ]);
 
         return redirect()->route('offres.show', $offre)

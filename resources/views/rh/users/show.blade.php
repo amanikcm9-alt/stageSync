@@ -150,7 +150,6 @@
                             </div>
                         </div>
                         
-                                                
                         <div class="mb-3">
                             <label class="small text-muted">Première connexion</label>
                             <div class="fw-bold">
@@ -170,7 +169,7 @@
                                         <i class="fas fa-briefcase me-2"></i>{{ $offre->titre }}
                                     </div>
                                     <div class="small text-muted mb-2">
-                                        <i class="fas fa-building me-1"></i>{{ $offre->entreprise?->nom ?? 'Entreprise non spécifiée' }}
+                                        <i class="fas fa-building me-1"></i>{{ $offre->entreprise->nom }}
                                     </div>
                                     @if($offre->description)
                                         <div class="small">

@@ -97,7 +97,7 @@
                             <div>
                                 <h6 class="fw-bold mb-1">{{ Str::limit($offre->titre, 45) }}</h6>
                                 <small class="text-muted">
-                                    <i class="fas fa-building"></i> {{ $offre->entreprise?->nom ?? 'MW' }}
+                                    <i class="fas fa-building"></i> {{ $offre->entreprise->nom }}
                                 </small>
                             </div>
                             <div>
@@ -125,7 +125,13 @@
                                     {{ $offre->date_debut->format('d/m/Y') }}
                                 </small>
                             </div>
-                                                        <div class="col-6">
+                            <div class="col-6">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock"></i> 
+                                    {{ $offre->duree }} semaines
+                                </small>
+                            </div>
+                            <div class="col-6">
                                 <small class="text-muted">
                                     <i class="fas fa-industry"></i> 
                                     {{ $offre->secteur }}

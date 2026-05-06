@@ -121,7 +121,13 @@
                         </a>
                     </li>
                     
-                                    </ul>
+                    <!-- À propos (entreprise) -->
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->is('apropos*') ? 'active' : '' }}" href="{{ route('apropos') }}">
+                            <i class="fas fa-info-circle me-2"></i>À Propos
+                        </a>
+                    </li>
+                </ul>
 
                 <!-- User Menu -->
                 @guest
@@ -198,7 +204,8 @@
                     <ul class="list-unstyled">
                         <li><a href="{{ url('/') }}" class="text-white text-decoration-none">Accueil</a></li>
                         <li><a href="{{ route('offres') }}" class="text-white text-decoration-none">Offres de Stage</a></li>
-                                            </ul>
+                        <li><a href="{{ route('apropos') }}" class="text-white text-decoration-none">À Propos</a></li>
+                    </ul>
                 </div>
                 <div class="col-md-4">
                     <h5>Contact</h5>

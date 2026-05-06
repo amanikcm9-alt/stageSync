@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\Candidature;
-use App\Models\OffreStage;
 use Illuminate\Http\Request;
 
 /**
@@ -14,21 +12,15 @@ use Illuminate\Http\Request;
 class RHAssignmentController extends Controller
 {
     /**
-     * Étape 1: Filtrer automatiquement les stagiaires acceptés sans encadrant
+     * Lister toutes les affectations encadrant-stagiaire
      */
     public function index()
     {
-        // Uniquement les stagiaires acceptés sans encadrant
         $query = User::whereHas('role', function($q) {
-                $q->where('name', 'stagiaire');
-            })
-            ->whereHas('candidature', function($q) {
-                $q->where('statut', 'accepte');
-            })
-            ->whereNull('encadrant_id')
-            ->with(['candidature.offreStage.secteur', 'candidature.offreStage.typeStage']);
+            $q->where('name', 'stagiaire');
+        })->with('encadrant', 'role');
 
-        // Filtre de recherche
+        // Filtres
         if (request('search')) {
             $search = request('search');
             $query->where(function($q) use ($search) {
@@ -38,139 +30,142 @@ class RHAssignmentController extends Controller
             });
         }
 
-        $stagiaires = $query->paginate(10);
-
-        return view('rh.affectation.index', compact('stagiaires'));
-    }
-
-    /**
-     * Étape 2: Afficher les encadrants filtrés pour un stagiaire
-     */
-    public function showEncadrants($stagiaireId)
-    {
-        $stagiaire = User::whereHas('role', function($q) {
-                $q->where('name', 'stagiaire');
-            })
-            ->whereHas('candidature', function($q) {
-                $q->where('statut', 'accepte');
-            })
-            ->whereNull('encadrant_id')
-            ->with(['candidature.offreStage.secteur', 'candidature.offreStage.typeStage'])
-            ->findOrFail($stagiaireId);
-
-        // Filtrer intelligemment les encadrants
-        $encadrantsQuery = User::whereHas('role', function($q) {
-                $q->where('name', 'encadrant');
-            })
-            ->with(['secteur', 'stagiairesAffectes']);
-
-        // Filtrer par secteur du stagiaire
-        if ($stagiaire->candidature->offreStage->secteur_id) {
-            $encadrantsQuery->where('secteur_id', $stagiaire->candidature->offreStage->secteur_id);
+        // Filtre par encadrant
+        if (request('encadrant_id')) {
+            $query->where('encadrant_id', request('encadrant_id'));
         }
 
-        $encadrants = $encadrantsQuery->get()->map(function($encadrant) {
-            // Étape 3: Afficher des infos utiles
-            return [
-                'id' => $encadrant->id,
-                'nom' => $encadrant->nom,
-                'prenom' => $encadrant->prenom,
-                'email' => $encadrant->email,
-                'secteur' => $encadrant->secteur ? $encadrant->secteur->nom : 'Non défini',
-                'specialite' => $encadrant->secteur ? $encadrant->secteur->nom : 'Non défini',
-                'nombre_stagiaires' => $encadrant->stagiairesAffectes->count(),
-                'disponibilite' => $encadrant->stagiairesAffectes->count() < 5 ? 'Disponible' : 'Charge élevée',
-                'couleur_disponibilite' => $encadrant->stagiairesAffectes->count() < 5 ? 'success' : 'warning',
-            ];
-        });
+        // Filtre par statut d'affectation
+        if (request('assignment_status')) {
+            if (request('assignment_status') === 'assigned') {
+                $query->whereNotNull('encadrant_id');
+            } else {
+                $query->whereNull('encadrant_id');
+            }
+        }
 
-        return view('rh.affectation.encadrants', compact('stagiaire', 'encadrants'));
+        $stagiaires = $query->paginate(15);
+        $encadrants = User::whereHas('role', function($q) {
+            $q->where('name', 'encadrant');
+        })->get();
+
+        return view('rh.assignments.index', compact('stagiaires', 'encadrants'));
     }
 
     /**
-     * Affecter un encadrant à un stagiaire
+     * Formulaire de création d'affectation
      */
-    public function assign(Request $request, $stagiaireId)
+    public function create()
     {
+        $stagiaires = User::whereHas('role', function($q) {
+            $q->where('name', 'stagiaire');
+        })->get();
+        
+        $encadrants = User::whereHas('role', function($q) {
+            $q->where('name', 'encadrant');
+        })->get();
+
+        return view('rh.assignments.create', compact('stagiaires', 'encadrants'));
+    }
+
+    /**
+     * Créer une affectation
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'stagiaire_id' => 'required|exists:users,id',
+            'encadrant_id' => 'required|exists:users,id',
+        ]);
+
+        $stagiaire = User::findOrFail($request->stagiaire_id);
+        
+        if ($stagiaire->role->name !== 'stagiaire') {
+            return redirect()->back()
+                ->with('error', 'L\'utilisateur sélectionné n\'est pas un stagiaire');
+        }
+
+        $stagiaire->update([
+            'encadrant_id' => $request->encadrant_id,
+        ]);
+
+        return redirect()->route('rh.assignments.index')
+            ->with('success', 'Affectation créée avec succès');
+    }
+
+    /**
+     * Afficher les détails d'une affectation
+     */
+    public function show($id)
+    {
+        $stagiaire = User::findOrFail($id);
+        
+        if ($stagiaire->role->name !== 'stagiaire') {
+            abort(404);
+        }
+
+        $stagiaire->load('encadrant', 'role');
+        
+        return view('rh.assignments.show', compact('stagiaire'));
+    }
+
+    /**
+     * Modifier une affectation
+     */
+    public function edit($id)
+    {
+        $stagiaire = User::findOrFail($id);
+        
+        if ($stagiaire->role->name !== 'stagiaire') {
+            abort(404);
+        }
+
+        $encadrants = User::whereHas('role', function($q) {
+            $q->where('name', 'encadrant');
+        })->get();
+
+        return view('rh.assignments.edit', compact('stagiaire', 'encadrants'));
+    }
+
+    /**
+     * Mettre à jour une affectation
+     */
+    public function update(Request $request, $id)
+    {
+        $stagiaire = User::findOrFail($id);
+        
+        if ($stagiaire->role->name !== 'stagiaire') {
+            abort(404);
+        }
+
         $request->validate([
             'encadrant_id' => 'required|exists:users,id',
         ]);
 
-        $stagiaire = User::whereHas('role', function($q) {
-                $q->where('name', 'stagiaire');
-            })
-            ->whereHas('candidature', function($q) {
-                $q->where('statut', 'accepte');
-            })
-            ->whereNull('encadrant_id')
-            ->findOrFail($stagiaireId);
-
-        $encadrant = User::whereHas('role', function($q) {
-                $q->where('name', 'encadrant');
-            })->findOrFail($request->encadrant_id);
-
-        // Vérifier la compatibilité secteur
-        if ($stagiaire->candidature->offreStage->secteur_id && 
-            $encadrant->secteur_id && 
-            $stagiaire->candidature->offreStage->secteur_id !== $encadrant->secteur_id) {
-            
-            return redirect()->back()
-                ->with('error', 'L\'encadrant sélectionné n\'est pas dans le même secteur que l\'offre du stagiaire.');
-        }
-
         $stagiaire->update([
-            'encadrant_id' => $encadrant->id,
+            'encadrant_id' => $request->encadrant_id,
         ]);
 
-        // Mettre à jour le statut de la candidature vers 'affecté'
-        $candidature = $stagiaire->candidature;
-        if ($candidature) {
-            $candidature->update(['statut' => 'affecté']);
-        }
-
-        return redirect()->route('rh.affectation.index')
-            ->with('success', "Le stagiaire {$stagiaire->nom} {$stagiaire->prenom} a été affecté à {$encadrant->nom} {$encadrant->prenom} avec succès.");
+        return redirect()->route('rh.assignments.index')
+            ->with('success', 'Affectation mise à jour avec succès');
     }
 
     /**
-     * API pour récupérer les encadrants filtrés (AJAX)
+     * Supprimer une affectation
      */
-    public function getEncadrantsForStagiaire($stagiaireId)
+    public function destroy($id)
     {
-        $stagiaire = User::whereHas('role', function($q) {
-                $q->where('name', 'stagiaire');
-            })
-            ->whereHas('candidature', function($q) {
-                $q->where('statut', 'accepte');
-            })
-            ->whereNull('encadrant_id')
-            ->with(['candidature.offreStage.secteur'])
-            ->findOrFail($stagiaireId);
-
-        $encadrantsQuery = User::whereHas('role', function($q) {
-                $q->where('name', 'encadrant');
-            })
-            ->with(['secteur', 'stagiairesAffectes']);
-
-        // Filtrer par secteur du stagiaire
-        if ($stagiaire->candidature->offreStage->secteur_id) {
-            $encadrantsQuery->where('secteur_id', $stagiaire->candidature->offreStage->secteur_id);
+        $stagiaire = User::findOrFail($id);
+        
+        if ($stagiaire->role->name !== 'stagiaire') {
+            abort(404);
         }
 
-        $encadrants = $encadrantsQuery->get()->map(function($encadrant) {
-            return [
-                'id' => $encadrant->id,
-                'nom' => $encadrant->nom,
-                'prenom' => $encadrant->prenom,
-                'email' => $encadrant->email,
-                'secteur' => $encadrant->secteur ? $encadrant->secteur->nom : 'Non défini',
-                'specialite' => $encadrant->secteur ? $encadrant->secteur->nom : 'Non défini',
-                'nombre_stagiaires' => $encadrant->stagiairesAffectes->count(),
-                'disponibilite' => $encadrant->stagiairesAffectes->count() < 5 ? 'Disponible' : 'Charge élevée',
-                'couleur_disponibilite' => $encadrant->stagiairesAffectes->count() < 5 ? 'success' : 'warning',
-            ];
-        });
+        $stagiaire->update([
+            'encadrant_id' => null,
+        ]);
 
-        return response()->json($encadrants);
+        return redirect()->route('rh.assignments.index')
+            ->with('success', 'Affectation supprimée avec succès');
     }
 }

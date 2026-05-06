@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('offre_stages', function (Blueprint $table) {
-            $table->unsignedBigInteger('entreprise_id')->nullable()->change();
+        Schema::table('activities', function (Blueprint $table) {
+            $table->boolean('archived')->default(false)->after('progression');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('offre_stages', function (Blueprint $table) {
-            $table->unsignedBigInteger('entreprise_id')->nullable(false)->change();
+        Schema::table('activities', function (Blueprint $table) {
+            $table->dropColumn('archived');
         });
     }
 };

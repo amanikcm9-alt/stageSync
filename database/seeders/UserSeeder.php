@@ -22,16 +22,6 @@ class UserSeeder extends Seeder
 
         // Créer 5 utilisateurs par rôle
         $users = [
-<<<<<<< HEAD
-            [
-                'nom' => 'Admin',
-                'prenom' => 'User',
-                'email' => 'admin@gmail.com',
-                'password' => Hash::make('123456'),
-                'role_id' => 1
-            ],
-           
-=======
             // 5 Admins
             ['nom' => 'Admin', 'prenom' => 'Principal', 'email' => 'admin1@tech-innovation.fr', 'password' => Hash::make('password'), 'role_id' => 1],
             ['nom' => 'Admin', 'prenom' => 'Système', 'email' => 'admin2@tech-innovation.fr', 'password' => Hash::make('password'), 'role_id' => 1],
@@ -59,7 +49,6 @@ class UserSeeder extends Seeder
             ['nom' => 'Rousseau', 'prenom' => 'Léa', 'email' => 'l.rousseau@tech-innovation.fr', 'password' => Hash::make('password'), 'role_id' => 4],
             ['nom' => 'Muller', 'prenom' => 'Hugo', 'email' => 'h.muller@tech-innovation.fr', 'password' => Hash::make('password'), 'role_id' => 4],
             ['nom' => 'Lemoine', 'prenom' => 'Chloé', 'email' => 'c.lemoine@tech-innovation.fr', 'password' => Hash::make('password'), 'role_id' => 4]
->>>>>>> 0796fcd31ef0870ffca50c5d831cc797299e7912
         ];
 
         foreach ($users as $userData) {
@@ -91,7 +80,7 @@ class UserSeeder extends Seeder
         }
 
         $this->command->info('Utilisateurs de test créés avec succès !');
-        $this->command->info('');
+        $this->command->info('');  
         $this->command->info('=== ADMINS (5) ===');
         $this->command->info('- admin1@tech-innovation.fr / password');
         $this->command->info('- admin2@tech-innovation.fr / password');
