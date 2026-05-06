@@ -10,8 +10,10 @@ class Evaluation extends Model
     use HasFactory;
 
     protected $fillable = [
+        'titre',
         'stagiaire_id',
         'encadrant_id',
+        'evaluateur_id',
         'activity_id',
         'offre_stage_id',
         'type',

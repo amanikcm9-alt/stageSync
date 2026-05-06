@@ -51,13 +51,6 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-2">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <h5 class="text-danger mb-1">{{ $stats['en_retard'] }}</h5>
-                    <small class="text-muted">En retard</small>
-                </div>
-            </div>
         </div>
         <div class="col-md-2">
             <div class="card border-0 shadow-sm">
@@ -126,13 +119,13 @@
         <div class="card-header bg-info text-white">
             <h6 class="mb-0">
                 <i class="fas fa-bell"></i> Notifications Récentes
-                @if($notifications->count() > 0)
-                <span class="badge bg-danger ms-2">{{ $notifications->count() }}</span>
+                @if(is_array($notifications) && count($notifications) > 0)
+                <span class="badge bg-danger ms-2">{{ count($notifications) }}</span>
                 @endif
             </h6>
         </div>
         <div class="card-body">
-            @if($notifications->count() > 0)
+            @if(is_array($notifications) && count($notifications) > 0)
                 <div class="row">
                     @foreach($notifications->take(6) as $notification)
                     <div class="col-md-6 mb-2">
@@ -367,12 +360,12 @@
     </div>
 
     <!-- Notifications -->
-    @if($notifications->count() > 0)
+    @if(is_array($notifications) && count($notifications) > 0)
     <div class="card border-0 shadow-sm mb-3 notifications-section">
         <div class="card-header bg-info text-white">
             <h6 class="mb-0">
                 <i class="fas fa-bell me-2"></i> Notifications
-                <span class="badge bg-light text-info ms-2">{{ $notifications->count() }}</span>
+                <span class="badge bg-light text-info ms-2">{{ count($notifications) }}</span>
             </h6>
         </div>
         <div class="card-body">
@@ -1461,5 +1454,4 @@ function marquerToutesLues() {
     });
 }
 </script>
-</div>
 @endsection

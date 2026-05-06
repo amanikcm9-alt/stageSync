@@ -148,7 +148,7 @@
                         </a>
                         @endif
                         @if(!$activity->stagiaire)
-                        <a href="{{ route('activities.assigner', $activity) }}" class="btn btn-outline-success">
+                        <a href="#" onclick="assignerActivite({{ $activity->id }})" class="btn btn-outline-success">
                             <i class="fas fa-user-plus"></i> Assigner
                         </a>
                         @endif

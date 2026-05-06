@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<<<<<<< HEAD
 <div class="container-fluid py-3">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -16,52 +17,35 @@
         <div>
             <a href="{{ route('encadrant.dashboard') }}" class="btn btn-outline-secondary btn-sm">
                 <i class="fas fa-arrow-left"></i> Retour au dashboard
+=======
+    <!-- Interface principale -->
+    <div class="row justify-content-center mb-5">
+        
+        <div class="col-md-6 text-center mb-4">
+            <div class="text-primary mb-3">
+                <i class="fas fa-user-graduate fa-3x"></i>
+            </div>
+            <h2 class="font-weight-bold text-dark mb-2">Évaluer le stagiaire</h2>
+            <p class="text-muted mb-4">Évaluez les performances et compétences de vos stagiaires.</p>
+            <a href="{{ route('evaluations.create') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-star mr-2"></i> Évaluer un stagiaire
+>>>>>>> 0796fcd31ef0870ffca50c5d831cc797299e7912
             </a>
         </div>
-    </div>
 
-    <!-- Statistiques -->
-    <div class="row mb-3">
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <h5 class="text-primary mb-1">{{ $evaluations->count() }}</h5>
-                    <small class="text-muted">Total évaluations</small>
-                </div>
+        <div class="col-md-6 text-center mb-4">
+            <div class="text-success mb-3">
+                <i class="fas fa-user-check fa-3x"></i>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <h5 class="text-success mb-1">{{ $evaluations->where('statut', 'validee')->count() }}</h5>
-                    <small class="text-muted">Évaluations validées</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <h5 class="text-info mb-1">{{ $evaluations->where('statut', 'brouillon')->count() }}</h5>
-                    <small class="text-muted">En préparation</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <h5 class="text-warning mb-1">
-                        @if($evaluations->where('statut', 'validee')->count() > 0)
-                        {{ round($evaluations->where('statut', 'validee')->avg('note_generale'), 1) }}
-                        @else
-                        -
-                        @endif
-                    </h5>
-                    <small class="text-muted">Note moyenne</small>
-                </div>
-            </div>
+            <h2 class="font-weight-bold text-dark mb-2">Auto-évaluations</h2>
+            <p class="text-muted mb-4">Consultez les auto-évaluations des stagiaires.</p>
+            <button onclick="window.location.href='/encadrant/dashboard'" class="btn btn-success btn-sm">
+                <i class="fas fa-eye mr-2"></i> Voir les auto-évaluations
+            </button>
         </div>
     </div>
 
+<<<<<<< HEAD
     <!-- Filtres -->
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-light">
@@ -253,8 +237,19 @@
                         @endif
                     </div>
                 </div>
+=======
+    <hr class="my-5">
+
+    <div class="text-center">
+            <div class="text-muted mb-3">
+                <i class="fas fa-clipboard-list fa-3x"></i>
+>>>>>>> 0796fcd31ef0870ffca50c5d831cc797299e7912
             </div>
+            <h3 class="font-weight-bold text-secondary mb-2">Aucune évaluation</h3>
+            <p class="text-muted mb-2">Vous n'avez pas encore créé d'évaluations.</p>
+            
         </div>
+<<<<<<< HEAD
         @endforeach
     </div>
     @else
@@ -267,11 +262,8 @@
     @endif
 </div>
 @endsection
+=======
+>>>>>>> 0796fcd31ef0870ffca50c5d831cc797299e7912
 
-@section('scripts')
-<script>
-function telechargerPDF(evaluationId) {
-    window.open(`/evaluations/${evaluationId}/pdf`, '_blank');
-}
-</script>
+    </div>
 @endsection
