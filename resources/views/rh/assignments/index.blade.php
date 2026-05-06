@@ -15,11 +15,7 @@
                 {{ $stagiaires->total() }} stagiaire{{ $stagiaires->total() > 1 ? 's' : '' }}
             </small>
         </div>
-        <div>
-            <a href="{{ route('rh.assignments.create') }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-user-plus"></i> Affecter
-            </a>
-        </div>
+       
     </div>
 
     <!-- Filtres compacts -->
@@ -119,14 +115,16 @@
                                 </td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm">
-                                        <a href="{{ route('rh.assignments.edit', $stagiaire) }}" 
-                                           class="btn btn-outline-primary btn-sm" title="Modifier">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
                                         <a href="{{ route('rh.users.show', $stagiaire) }}" 
                                            class="btn btn-outline-secondary btn-sm" title="Voir">
                                             <i class="fas fa-eye"></i>
                                         </a>
+                                        @if(!$stagiaire->encadrant_id)
+                                            <a href="{{ route('rh.assignments.create') }}?stagiaire_id={{ $stagiaire->id }}" 
+                                               class="btn btn-primary btn-sm" title="Affecter">
+                                                <i class="fas fa-user-plus"></i>
+                                            </a>
+                                        @endif
                                         @if($stagiaire->encadrant_id)
                                             <form action="{{ route('rh.assignments.destroy', $stagiaire) }}" 
                                                   method="POST" class="d-inline">

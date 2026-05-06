@@ -14,9 +14,6 @@
             </small>
         </div>
         <div>
-            <a href="{{ route('evaluations.create') }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus"></i> Nouvelle évaluation
-            </a>
             <a href="{{ route('encadrant.dashboard') }}" class="btn btn-outline-secondary btn-sm">
                 <i class="fas fa-arrow-left"></i> Retour au dashboard
             </a>
@@ -66,7 +63,13 @@
     </div>
 
     <!-- Filtres -->
-    <div class="card border-0 shadow-sm mb-3">
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h6 class="mb-0">
+                <i class="fas fa-filter text-primary"></i> 
+                Recherche et filtres
+            </h6>
+        </div>
         <div class="card-body">
             <form method="GET" class="row g-3">
                 <div class="col-md-3">
@@ -97,19 +100,62 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <div class="btn-group w-100">
-                        <button type="submit" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-filter"></i> Filtrer
-                        </button>
-                        <a href="{{ route('evaluations.index') }}" class="btn btn-outline-secondary btn-sm">
-                            <i class="fas fa-times"></i> Réinitialiser
-                        </a>
-                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="fas fa-search"></i> Rechercher
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Section pour créer des évaluations -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h6 class="mb-0">
+                <i class="fas fa-plus-circle text-primary"></i> 
+                Actions d'évaluation
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <!-- Évaluer le stagiaire -->
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-user-graduate fa-3x text-primary"></i>
+                            </div>
+                            <h6 class="card-title">Évaluer le stagiaire</h6>
+                            <p class="card-text small text-muted">
+                                Évaluez les performances et compétences de vos stagiaires
+                            </p>
+                            <a href="{{ route('encadrant.evaluations.create') }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-star me-2"></i>Évaluer un stagiaire
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Consulter les auto-évaluations -->
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-user-check fa-3x text-success"></i>
+                            </div>
+                            <h6 class="card-title">Auto-évaluations</h6>
+                            <p class="card-text small text-muted">
+                                Consultez les auto-évaluations des stagiaires
+                            </p>
+                            <a href="{{ route('encadrant.evaluations.auto.index') }}" class="btn btn-success btn-sm">
+                                <i class="fas fa-eye me-2"></i>Voir les auto-évaluations
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Liste des évaluations -->
     @if($evaluations->count() > 0)
     <div class="row">
@@ -216,9 +262,7 @@
         <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
         <h5 class="text-muted">Aucune évaluation</h5>
         <p class="text-muted">Vous n'avez pas encore créé d'évaluations.</p>
-        <a href="{{ route('evaluations.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Créer une évaluation
-        </a>
+        <p class="text-muted small">Utilisez le bouton "Évaluer un stagiaire" ci-dessus pour commencer.</p>
     </div>
     @endif
 </div>

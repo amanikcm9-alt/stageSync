@@ -14,11 +14,13 @@ class OffreStage extends Model
         'description',
         'missions',
         'secteur',
+        'secteur_id',
         'lieu',
         'duree_semaines',
         'remuneration',
         'statut',
         'type_stage',
+        'type_stage_id',
         'date_debut',
         'date_fin',
         'entreprise_id',
@@ -56,15 +58,27 @@ class OffreStage extends Model
         return $this->hasMany(Candidature::class);
     }
 
+    public function secteur()
+    {
+        return $this->belongsTo(Secteur::class);
+    }
+
+    public function typeStage()
+    {
+        return $this->belongsTo(TypeStage::class);
+    }
+
     // Scopes pour filtrer facilement
     public function scopePubliee($query)
     {
-        return $query->where('statut', 'publiee');
+        return $query->where('statut', 'publiee')
+                    ->where('statut', '!=', 'affectée');
     }
 
     public function scopeActive($query)
     {
         return $query->where('statut', 'publiee')
+                    ->where('statut', '!=', 'affectée')
                     ->where('date_debut', '<=', now())
                     ->where('date_fin', '>=', now());
     }
@@ -139,7 +153,7 @@ class OffreStage extends Model
     // Méthodes métier
     public function estPublieeEtActive()
     {
-        return $this->statut === 'publiee';
+        return $this->statut === 'publiee' && $this->statut !== 'affectée';
     }
 
     public function peutEtreCandidatee()

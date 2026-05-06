@@ -64,6 +64,77 @@
             </div>
         </div>
     </div>
+
+    <!-- Section Évaluations -->
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-clipboard-check text-primary"></i> 
+                        Évaluations
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Évaluer l'organisation -->
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-building fa-3x text-primary"></i>
+                                    </div>
+                                    <h6 class="card-title">Évaluer l'organisation</h6>
+                                    <p class="card-text small text-muted">
+                                        Évaluez l'organisation de votre stage et l'entreprise d'accueil
+                                    </p>
+                                    <a href="#" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-edit me-2"></i>Commencer l'évaluation
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Évaluer l'encadrant -->
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-user-tie fa-3x text-success"></i>
+                                    </div>
+                                    <h6 class="card-title">Évaluer l'encadrant</h6>
+                                    <p class="card-text small text-muted">
+                                        Évaluez l'encadrement et le suivi de votre encadrant
+                                    </p>
+                                    <a href="#" class="btn btn-success btn-sm">
+                                        <i class="fas fa-star me-2"></i>Évaluer mon encadrant
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Réaliser une auto-évaluation -->
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-user-check fa-3x text-info"></i>
+                                    </div>
+                                    <h6 class="card-title">Auto-évaluation</h6>
+                                    <p class="card-text small text-muted">
+                                        Évaluez votre propre travail et vos compétences
+                                    </p>
+                                    <a href="#" class="btn btn-info btn-sm">
+                                        <i class="fas fa-clipboard me-2"></i>M'auto-évaluer
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>

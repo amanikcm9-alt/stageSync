@@ -430,6 +430,40 @@
         </div>
     </div>
 </div>
+
+    <!-- Section Évaluations -->
+    <a href="{{ route('encadrant.evaluations.index') }}" class="card border-0 shadow-sm mb-3 text-decoration-none">
+        <div class="card-header bg-success text-white">
+            <h6 class="mb-0">
+                <i class="fas fa-clipboard-check"></i> Évaluations
+                <small class="float-end">
+                    <i class="fas fa-arrow-right"></i>
+                </small>
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar bg-white text-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1 text-white">Gérer les évaluations</h6>
+                            <small class="text-white-50">Évaluer les stagiaires et consulter les auto-évaluations</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="text-white">
+                        <div class="h4 mb-0">{{ $evaluations->count() }}</div>
+                        <small>Évaluations</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </a>
+
 @endsection
 
 @section('scripts')

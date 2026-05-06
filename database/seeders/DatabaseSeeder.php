@@ -18,8 +18,10 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             EntrepriseSeeder::class,
+            // SecteurSeeder::class, // Désactivé pour garder les listes vides
+            // TypeStageSeeder::class, // Désactivé pour garder les listes vides
             UserSeeder::class,
-            OffreStageSeeder::class,
+            // OffreStageSeeder::class, // Désactivé car dépend des secteurs/types
         ]);
     }
 }

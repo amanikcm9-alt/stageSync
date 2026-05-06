@@ -306,6 +306,261 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('entreprises/{entreprise}/activer', [EntrepriseController::class, 'activer'])->name('entreprises.activer');
     Route::get('entreprises/{entreprise}/reglement', [EntrepriseController::class, 'showReglement'])->name('entreprises.reglement');
     Route::post('entreprises/{entreprise}/desactiver', [EntrepriseController::class, 'desactiver'])->name('entreprises.desactiver');
+    
+    // Gestion des secteurs (admin)
+    Route::post('secteurs', function(\Illuminate\Http\Request $request) {
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'nom' => 'required|string|max:255|unique:secteurs,nom',
+            'description' => 'nullable|string|max:1000',
+            'lieu' => 'nullable|string|max:255',
+            'actif' => 'sometimes|boolean'
+        ]);
+
+        if ($validator->fails()) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erreur de validation',
+                    'errors' => $validator->errors()
+                ]);
+            }
+            return redirect()
+                ->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        // Debug: afficher les données reçues pour création secteur admin
+        \Log::info('Données reçues pour création secteur admin:', [
+            'nom' => $request->nom,
+            'description' => $request->description,
+            'lieu' => $request->lieu,
+            'actif' => $request->boolean('actif', true),
+            'all_data' => $request->all()
+        ]);
+
+        $secteur = \App\Models\Secteur::create([
+            'nom' => $request->nom,
+            'description' => $request->description,
+            'lieu' => $request->lieu,
+            'actif' => $request->boolean('actif', true)
+        ]);
+
+        // Si c'est une requête AJAX, retourner JSON
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Secteur créé avec succès.',
+                'secteur' => $secteur
+            ]);
+        }
+
+        return redirect()
+            ->back()
+            ->with('success', 'Secteur créé avec succès.');
+    })->name('secteurs.store');
+
+    Route::put('secteurs/{secteur}', function(\Illuminate\Http\Request $request, \App\Models\Secteur $secteur) {
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'nom' => 'required|string|max:255|unique:secteurs,nom,' . $secteur->id,
+            'description' => 'nullable|string|max:1000',
+            'lieu' => 'nullable|string|max:255',
+            'actif' => 'sometimes|boolean'
+        ]);
+
+        if ($validator->fails()) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erreur de validation',
+                    'errors' => $validator->errors()
+                ]);
+            }
+            return redirect()
+                ->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        // Debug: afficher les données reçues pour mise à jour secteur admin
+        \Log::info('Données reçues pour mise à jour secteur admin:', [
+            'nom' => $request->nom,
+            'description' => $request->description,
+            'lieu' => $request->lieu,
+            'actif' => $request->boolean('actif', true),
+            'all_data' => $request->all()
+        ]);
+
+        $secteur->update([
+            'nom' => $request->nom,
+            'description' => $request->description,
+            'lieu' => $request->lieu,
+            'actif' => $request->boolean('actif', true)
+        ]);
+
+        // Si c'est une requête AJAX, retourner JSON
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Secteur mis à jour avec succès.',
+                'secteur' => $secteur
+            ]);
+        }
+
+        return redirect()
+            ->back()
+            ->with('success', 'Secteur mis à jour avec succès.');
+    })->name('secteurs.update');
+
+    Route::delete('secteurs/{secteur}', function(\App\Models\Secteur $secteur) {
+        // Vérifier si des offres utilisent ce secteur
+        if ($secteur->offres()->count() > 0) {
+            if (request()->expectsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Impossible de supprimer ce secteur car il est utilisé par des offres de stage.'
+                ]);
+            }
+            
+            return redirect()
+                ->back()
+                ->with('error', 'Impossible de supprimer ce secteur car il est utilisé par des offres de stage.');
+        }
+
+        $secteur->delete();
+        
+        // Si c'est une requête AJAX, retourner JSON
+        if (request()->expectsJson() || request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Secteur supprimé avec succès.'
+            ]);
+        }
+        
+        return redirect()
+            ->back()
+            ->with('success', 'Secteur supprimé avec succès.');
+    })->name('secteurs.destroy');
+
+    
+    // Gestion des types de stage (admin)
+    Route::post('type-stages', function(\Illuminate\Http\Request $request) {
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'nom' => 'required|string|max:255|unique:type_stages,nom',
+            'code' => 'nullable|string|max:10|unique:type_stages,code,NULL,id',
+            'description' => 'nullable|string|max:1000',
+            'lieu' => 'nullable|string|max:255',
+            'actif' => 'sometimes|boolean'
+        ]);
+
+        if ($validator->fails()) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erreur de validation',
+                    'errors' => $validator->errors()
+                ]);
+            }
+            return redirect()
+                ->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $typeStage = \App\Models\TypeStage::create([
+            'nom' => $request->nom,
+            'code' => $request->code,
+            'description' => $request->description,
+            'actif' => $request->boolean('actif', true)
+        ]);
+
+        // Si c'est une requête AJAX, retourner JSON
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Type de stage créé avec succès.',
+                'type_stage' => $typeStage
+            ]);
+        }
+
+        return redirect()
+            ->back()
+            ->with('success', 'Type de stage créé avec succès.');
+    })->name('type-stages.store');
+
+    Route::put('type-stages/{typeStage}', function(\Illuminate\Http\Request $request, \App\Models\TypeStage $typeStage) {
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'nom' => 'required|string|max:255|unique:type_stages,nom,' . $typeStage->id,
+            'code' => 'nullable|string|max:10|unique:type_stages,code,' . $typeStage->id . ',id',
+            'description' => 'nullable|string|max:1000',
+            'lieu' => 'nullable|string|max:255',
+            'actif' => 'sometimes|boolean'
+        ]);
+
+        if ($validator->fails()) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erreur de validation',
+                    'errors' => $validator->errors()
+                ]);
+            }
+            return redirect()
+                ->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $typeStage->update([
+            'nom' => $request->nom,
+            'code' => $request->code,
+            'description' => $request->description,
+            'actif' => $request->boolean('actif', true)
+        ]);
+
+        // Si c'est une requête AJAX, retourner JSON
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Type de stage mis à jour avec succès.',
+                'type_stage' => $typeStage
+            ]);
+        }
+
+        return redirect()
+            ->back()
+            ->with('success', 'Type de stage mis à jour avec succès.');
+    })->name('type-stages.update');
+
+    Route::delete('type-stages/{typeStage}', function(\App\Models\TypeStage $typeStage) {
+        // Vérifier si des offres utilisent ce type de stage
+        if ($typeStage->offres()->count() > 0) {
+            if (request()->expectsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Impossible de supprimer ce type de stage car il est utilisé par des offres de stage.'
+                ]);
+            }
+            
+            return redirect()
+                ->back()
+                ->with('error', 'Impossible de supprimer ce type de stage car il est utilisé par des offres de stage.');
+        }
+
+        $typeStage->delete();
+        
+        // Si c'est une requête AJAX, retourner JSON
+        if (request()->expectsJson() || request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Type de stage supprimé avec succès.'
+            ]);
+        }
+        
+        return redirect()
+            ->back()
+            ->with('success', 'Type de stage supprimé avec succès.');
+    })->name('type-stages.destroy');
 });
 
 // ROUTES RH - Gestion des offres et candidatures (RH uniquement)
@@ -329,8 +584,10 @@ Route::middleware(['auth', 'role:rh'])->prefix('rh')->name('rh.')->group(functio
     Route::put('assignments/{assignment}', [RHUserController::class, 'assignmentsUpdate'])->name('assignments.update');
     Route::delete('assignments/{assignment}', [RHUserController::class, 'assignmentsDestroy'])->name('assignments.destroy');
     
+        
     // Gestion des offres de stage
-    Route::get('offres', [OffreStageController::class, 'index'])->name('offres');
+    Route::get('offres', [OffreStageController::class, 'index'])->name('offres.index');
+    Route::get('offres', [OffreStageController::class, 'index'])->name('offres'); // Alias pour rétrocompatibilité
     Route::get('offres/create', [OffreStageController::class, 'create'])->name('offres.create');
     Route::post('offres', [OffreStageController::class, 'store'])->name('offres.store');
     Route::get('offres/{offre}', [OffreStageController::class, 'show'])->name('offres.show');
@@ -351,10 +608,158 @@ Route::middleware(['auth', 'role:rh'])->prefix('rh')->name('rh.')->group(functio
     Route::post('candidatures/{candidature}/archive', [CandidatureController::class, 'archive'])->name('candidatures.archive');
     Route::post('candidatures/{candidature}/unarchive', [CandidatureController::class, 'unarchive'])->name('candidatures.unarchive');
     Route::delete('candidatures/{candidature}', [CandidatureController::class, 'destroy'])->name('candidatures.destroy');
-    
     // Gestion des entreprises (lecture seule pour RH)
     Route::get('entreprises', [EntrepriseController::class, 'index'])->name('entreprises.index');
     Route::get('entreprises/{entreprise}', [EntrepriseController::class, 'show'])->name('entreprises.show');
+    
+    // Gestion des affectations (RH) - Interface intelligente
+    Route::get('affectation', [\App\Http\Controllers\RHAssignmentController::class, 'index'])->name('rh.affectation.index');
+    Route::get('affectation/{stagiaireId}/encadrants', [\App\Http\Controllers\RHAssignmentController::class, 'showEncadrants'])->name('rh.affectation.encadrants');
+    Route::post('affectation/{stagiaireId}/assign', [\App\Http\Controllers\RHAssignmentController::class, 'assign'])->name('rh.affectation.assign');
+    Route::get('api/affectation/{stagiaireId}/encadrants', [\App\Http\Controllers\RHAssignmentController::class, 'getEncadrantsForStagiaire'])->name('api.affectation.encadrants');
+    
+    // Gestion des entretiens
+    Route::get('entretiens', [\App\Http\Controllers\EntretienController::class, 'index'])->name('entretiens.index');
+    Route::get('entretiens/{entretien}', [\App\Http\Controllers\EntretienController::class, 'show'])->name('entretiens.show');
+    Route::post('entretiens/{entretien}/evaluer', [\App\Http\Controllers\EntretienController::class, 'evaluer'])->name('entretiens.evaluer');
+
+    // Anciennes routes (maintenues pour compatibilité)
+    Route::get('affectations', [\App\Http\Controllers\AdminAssignmentController::class, 'index'])->name('affectations.index');
+    Route::get('affectations/{id}', [\App\Http\Controllers\AdminAssignmentController::class, 'show'])->name('affectations.show');
+    Route::get('affectations/{id}/edit', [\App\Http\Controllers\AdminAssignmentController::class, 'edit'])->name('affectations.edit');
+    Route::post('affectations', [\App\Http\Controllers\AdminAssignmentController::class, 'store'])->name('affectations.store');
+    Route::put('affectations/{id}', [\App\Http\Controllers\AdminAssignmentController::class, 'update'])->name('affectations.update');
+    Route::delete('affectations/{id}', [\App\Http\Controllers\AdminAssignmentController::class, 'destroy'])->name('affectations.destroy');
+    Route::post('affectations/bulk', [\App\Http\Controllers\AdminAssignmentController::class, 'bulkAssign'])->name('affectations.bulk');
+
+    // Gestion des secteurs
+    Route::get('secteurs', function() {
+        $secteurs = \App\Models\Secteur::withCount('offres')
+            ->orderBy('nom')
+            ->get();
+        
+        return view('rh.secteurs.index', compact('secteurs'));
+    })->name('secteurs.index');
+    
+    // API pour récupérer les lieux des secteurs
+    Route::get('api/secteurs/{secteurId}/lieu', function($secteurId) {
+        $secteur = \App\Models\Secteur::find($secteurId);
+        
+        if ($secteur) {
+            return response()->json([
+                'success' => true,
+                'lieu' => $secteur->lieu
+            ]);
+        }
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Secteur non trouvé'
+        ]);
+    });
+    
+    Route::get('secteurs/create', function() {
+        return view('rh.secteurs.create');
+    })->name('secteurs.create');
+    
+    Route::post('secteurs', function(\Illuminate\Http\Request $request) {
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'nom' => 'required|string|max:255|unique:secteurs,nom',
+            'description' => 'nullable|string|max:1000',
+            'lieu' => 'nullable|string|max:255',
+            'actif' => 'sometimes|boolean'
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()
+                ->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $secteur = \App\Models\Secteur::create([
+            'nom' => $request->nom,
+            'description' => $request->description,
+            'lieu' => $request->lieu,
+            'actif' => $request->boolean('actif', true)
+        ]);
+
+        return redirect()
+            ->route('rh.secteurs.index')
+            ->with('success', 'Secteur créé avec succès.');
+    })->name('secteurs.store');
+    
+    Route::get('secteurs/{secteur}/edit', function(\App\Models\Secteur $secteur) {
+        return view('rh.secteurs.edit', compact('secteur'));
+    })->name('secteurs.edit');
+    
+    Route::put('secteurs/{secteur}', function(\Illuminate\Http\Request $request, \App\Models\Secteur $secteur) {
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'nom' => 'required|string|max:255|unique:secteurs,nom,' . $secteur->id,
+            'description' => 'nullable|string|max:1000',
+            'lieu' => 'nullable|string|max:255',
+            'actif' => 'sometimes|boolean'
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()
+                ->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $secteur->update([
+            'nom' => $request->nom,
+            'description' => $request->description,
+            'lieu' => $request->lieu,
+            'actif' => $request->boolean('actif', true)
+        ]);
+
+        return redirect()
+            ->route('rh.secteurs.index')
+            ->with('success', 'Secteur mis à jour avec succès.');
+    })->name('secteurs.update');
+    
+    Route::post('secteurs/{secteur}/archive', function(\App\Models\Secteur $secteur) {
+        $secteur->archiver();
+        
+        return redirect()
+            ->route('rh.secteurs.index')
+            ->with('success', 'Secteur archivé avec succès.');
+    })->name('secteurs.archive');
+    
+    Route::post('secteurs/{secteur}/restore', function(\App\Models\Secteur $secteur) {
+        $secteur->desarchiver();
+        
+        return redirect()
+            ->route('rh.secteurs.index')
+            ->with('success', 'Secteur restauré avec succès.');
+    })->name('secteurs.restore');
+    
+    Route::delete('secteurs/{secteur}', function(\App\Models\Secteur $secteur) {
+        // Vérifier si des offres utilisent ce secteur
+        if ($secteur->offres()->count() > 0) {
+            return redirect()
+                ->route('rh.secteurs.index')
+                ->with('error', 'Impossible de supprimer ce secteur car il est utilisé par des offres de stage.');
+        }
+
+        $secteur->delete();
+        
+        return redirect()
+            ->route('rh.secteurs.index')
+            ->with('success', 'Secteur supprimé avec succès.');
+    })->name('secteurs.destroy');
+    
+    // Gestion des types de stage
+    Route::get('type-stages', [TypeStageController::class, 'index'])->name('type-stages.index');
+    Route::get('type-stages/create', [TypeStageController::class, 'create'])->name('type-stages.create');
+    Route::post('type-stages', [TypeStageController::class, 'store'])->name('type-stages.store');
+    Route::get('type-stages/{typeStage}/edit', [TypeStageController::class, 'edit'])->name('type-stages.edit');
+    Route::put('type-stages/{typeStage}', [TypeStageController::class, 'update'])->name('type-stages.update');
+    Route::post('type-stages/{typeStage}/archive', [TypeStageController::class, 'archive'])->name('type-stages.archive');
+    Route::post('type-stages/{typeStage}/restore', [TypeStageController::class, 'restore'])->name('type-stages.restore');
+    Route::delete('type-stages/{typeStage}', [TypeStageController::class, 'destroy'])->name('type-stages.destroy');
     
     // Notifications SMS
     Route::prefix('notifications')->name('notifications.')->group(function () {
@@ -414,6 +819,11 @@ Route::middleware(['auth', 'role:stagiaire'])->prefix('stagiaire')->name('stagia
     Route::get('/dashboard', [ActivityController::class, 'dashboard'])->name('dashboard');
     Route::get('/activities', [ActivityController::class, 'mesActivites'])->name('activities.index');
     Route::get('/evaluations', [ActivityController::class, 'mesEvaluations'])->name('evaluations.index');
+    
+    // Routes pour les évaluations du stagiaire
+    Route::get('/evaluations/organisation/create', [EvaluationController::class, 'createOrganisation'])->name('evaluations.organisation.create');
+    Route::get('/evaluations/encadrant/create', [EvaluationController::class, 'createEncadrant'])->name('evaluations.encadrant.create');
+    Route::get('/evaluations/auto/create', [EvaluationController::class, 'createAuto'])->name('evaluations.auto.create');
 });
 
 // Actions des stagiaires sur les activités (routes POST)
@@ -437,6 +847,10 @@ Route::middleware(['auth', 'role:encadrant'])->prefix('encadrant')->name('encadr
     Route::get('/dashboard', [ActivityController::class, 'dashboard'])->name('dashboard');
     Route::get('/activities', [ActivityController::class, 'mesActivitesEncadrant'])->name('activities.index');
     Route::get('/evaluations', [ActivityController::class, 'mesEvaluationsEncadrant'])->name('evaluations.index');
+    
+    // Routes pour les évaluations de l'encadrant
+    Route::get('/evaluations/create', [EvaluationController::class, 'createStagiaire'])->name('evaluations.create');
+    Route::get('/evaluations/auto', [EvaluationController::class, 'indexAutoEvaluations'])->name('evaluations.auto.index');
 });
 
 // Soumissions d'activités

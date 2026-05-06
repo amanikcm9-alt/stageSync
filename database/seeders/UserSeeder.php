@@ -28,7 +28,8 @@ class UserSeeder extends Seeder
                 'email' => 'admin@gmail.com',
                 'password' => Hash::make('123456'),
                 'role_id' => 1
-            ]
+            ],
+           
         ];
 
         foreach ($users as $userData) {

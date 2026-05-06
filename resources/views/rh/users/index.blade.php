@@ -37,7 +37,8 @@
                 </div>
                 <div class="col-md-2">
                     <select class="form-select form-select-sm" name="status">
-                        <option value="">Statut</option>
+                        <option value="en_cours" {{ request('status') == 'en_cours' || !request('status') ? 'selected' : '' }}>En cours</option>
+                        <option value="autres" {{ request('status') == 'autres' ? 'selected' : '' }}>Autres</option>
                         <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}">Actif</option>
                         <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}">Inactif</option>
                     </select>
