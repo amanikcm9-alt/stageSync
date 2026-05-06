@@ -114,8 +114,8 @@
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <div class="stat-number-compact">{{ \App\Models\Candidature::count() }}</div>
-                            <div class="stat-label-compact text-muted">Candidatures</div>
+                           <div class="stat-number-compact">{{ \App\Models\Candidature::where('statut', 'recue')->count() }}</div>
+<div class="stat-label-compact text-muted">Candidatures Reçues</div>
                         </div>
                         <div class="stat-icon-compact text-info">
                             <i class="fas fa-inbox"></i>
@@ -125,38 +125,8 @@
             </div>
         </div>
         
-        <div class="col-lg-3 col-md-6">
-            <div class="card border-0 shadow-sm stat-card-compact">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="stat-number-compact">{{ \App\Models\Candidature::where('statut', 'recue')->count() }}</div>
-                            <div class="stat-label-compact text-muted">Reçues</div>
-                        </div>
-                        <div class="stat-icon-compact text-warning">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-3 col-md-6">
-            <div class="card border-0 shadow-sm stat-card-compact">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="stat-number-compact">{{ \App\Models\Candidature::where('statut', 'accepte')->count() }}</div>
-                            <div class="stat-label-compact text-muted">Acceptées</div>
-                        </div>
-                        <div class="stat-icon-compact text-success">
-                            <i class="fas fa-check"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+     
+      
 
     <!-- Actions rapides -->
     <div class="row g-2">
@@ -172,12 +142,12 @@
                         </div>
                         <div class="col-md-4 col-6">
                             <a href="{{ route('admin.settings.index') }}" class="btn btn-outline-secondary btn-sm w-100">
-                                <i class="fas fa-cog me-1"></i> Paramètres
+                                <i class="fas fa-cog me-1"></i> Gérer Paramètres
                             </a>
                         </div>
                         <div class="col-md-4 col-6">
                             <a href="{{ route('admin.entreprises.index') }}" class="btn btn-outline-success btn-sm w-100">
-                                <i class="fas fa-building me-1"></i> Entreprises
+                                <i class="fas fa-building me-1"></i> Gérer Entreprises
                             </a>
                         </div>
                     </div>

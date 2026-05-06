@@ -28,30 +28,10 @@
             </h5>
         </div>
         <div class="card-body">
-            <form action="{{ route('stagiaire.activities.store') }}" method="POST">
+            <form action="{{ route('activities.proposer') }}" method="POST">
                 @csrf
                 <div class="row">
                     <div class="col-md-8">
-                        <div class="mb-3">
-                            <label for="encadrant_id" class="form-label">Encadrant *</label>
-                            <select class="form-select" id="encadrant_id" name="encadrant_id" required>
-                                <option value="">Sélectionner un encadrant...</option>
-                                @foreach($encadrants as $encadrant)
-                                    <option value="{{ $encadrant->id }}">
-                                        {{ $encadrant->prenom }} {{ $encadrant->nom }}
-                                        @if($encadrant->entreprise)
-                                            ({{ $encadrant->entreprise->nom }})
-                                        @endif
-                                    </option>
-                                @endforeach
-                            </select>
-                            @if($encadrants->isEmpty())
-                                <div class="text-danger small mt-1">
-                                    Aucun encadrant disponible. Veuillez contacter l'administrateur.
-                                </div>
-                            @endif
-                        </div>
-                        
                         <div class="mb-3">
                             <label for="titre" class="form-label">Titre de l'activité *</label>
                             <input type="text" class="form-control" id="titre" name="titre" required 
@@ -78,14 +58,31 @@
                     </div>
                     
                     <div class="col-md-4">
-                        
+                        <div class="mb-3">
+                            <label for="priorite" class="form-label">Priorité</label>
+                            <select class="form-select" id="priorite" name="priorite">
+                                <option value="moyenne">Moyenne</option>
+                                <option value="haute">Haute</option>
+                                <option value="urgente">Urgente</option>
+                            </select>
+                        </div>
                         
                         <div class="mb-3">
                             <label for="date_limite" class="form-label">Date limite souhaitée</label>
                             <input type="date" class="form-control" id="date_limite" name="date_limite">
                         </div>
                         
-                       
+                        <div class="mb-3">
+                            <label for="duree_estimee" class="form-label">Durée estimée</label>
+                            <select class="form-select" id="duree_estimee" name="duree_estimee">
+                                <option value="">Sélectionner...</option>
+                                <option value="1-2 jours">1-2 jours</option>
+                                <option value="3-5 jours">3-5 jours</option>
+                                <option value="1 semaine">1 semaine</option>
+                                <option value="2 semaines">2 semaines</option>
+                                <option value="1 mois">1 mois</option>
+                            </select>
+                        </div>
                         
                         <div class="mb-3">
                             <label for="ressources" class="form-label">Ressources nécessaires</label>

@@ -33,7 +33,6 @@
         <div class="card-body">
             <form action="{{ route('submissions.store', $activity) }}" method="POST" enctype="multipart/form-data">
                 @csrf
-                <input type="hidden" name="action" value="soumettre">
                 
                 <!-- Informations sur l'activité -->
                 <div class="alert alert-info mb-3">
@@ -53,25 +52,24 @@
                     </p>
                 </div>
 
-                <!-- Description du travail -->
+                <!-- Commentaire -->
                 <div class="mb-3">
-                    <label for="description_travail" class="form-label">
-                        <i class="fas fa-file-alt me-2"></i>
-                        Description du travail <span class="text-danger">*</span>
+                    <label for="commentaire" class="form-label">
+                        <i class="fas fa-comment me-2"></i>
+                        Commentaire <span class="text-muted">(optionnel)</span>
                     </label>
-                    <textarea name="description_travail" id="description_travail" class="form-control" rows="4" 
-                              placeholder="Décrivez votre travail, les difficultés rencontrées, etc." required>{{ old('description_travail') }}</textarea>
-                    @error('description_travail')
+                    <textarea name="commentaire" id="commentaire" class="form-control" rows="4" 
+                              placeholder="Décrivez votre travail, les difficultés rencontrées, etc.">{{ old('commentaire') }}</textarea>
+                    @error('commentaire')
                         <div class="text-danger small mt-1">{{ $message }}</div>
                     @enderror
                 </div>
 
-                
                 <!-- Fichiers -->
                 <div class="mb-3">
                     <label for="fichiers" class="form-label">
                         <i class="fas fa-paperclip me-2"></i>
-                        Fichiers
+                        Fichiers <span class="text-muted">(optionnel)</span>
                     </label>
                     <input type="file" name="fichiers[]" id="fichiers" class="form-control" multiple 
                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.jpg,.jpeg,.png,.gif">
@@ -181,12 +179,12 @@ document.getElementById('fichiers').addEventListener('change', function(e) {
 
 // Confirmation avant soumission
 document.querySelector('form').addEventListener('submit', function(e) {
-    const description = document.getElementById('description_travail').value.trim();
+    const commentaire = document.getElementById('commentaire').value.trim();
     const fichiers = document.getElementById('fichiers').files;
     
-    if (!description && fichiers.length === 0) {
+    if (!commentaire && fichiers.length === 0) {
         e.preventDefault();
-        if (confirm('Vous n\'avez ajouté ni description, ni fichier. Voulez-vous quand même soumettre ?')) {
+        if (confirm('Vous n\'avez ajouté ni commentaire ni fichier. Voulez-vous quand même soumettre ?')) {
             e.target.submit();
         }
     }

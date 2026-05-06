@@ -106,12 +106,10 @@ class Activity extends Model
             'proposee' => 'Proposée',
             'assignee' => 'Assignée',
             'en_cours' => 'En cours',
-            'soumise' => 'Terminée',
+            'soumise' => 'Soumise',
             'validee' => 'Validée',
             'refusee' => 'Refusée',
             'terminee' => 'Terminée',
-            'archivée' => 'Archivée',
-            'demander_info' => 'Demander complément d\'information',
         ];
         
         return $labels[$this->statut] ?? $this->statut;
@@ -150,9 +148,7 @@ class Activity extends Model
             'soumise' => 'warning',
             'validee' => 'success',
             'refusee' => 'danger',
-            'terminee' => 'success',
-            'archivée' => 'light',
-            'demander_info' => 'warning',
+            'terminee' => 'dark',
         ];
         
         return $colors[$this->statut] ?? 'secondary';

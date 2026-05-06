@@ -37,13 +37,13 @@
                     </div>
                     <div class="col-md-4">
                         <div class="form-floating mb-3">
-                            <select class="form-select" id="type_stage" name="type_stage" required>
+                            <select class="form-select" id="type_stage_id" name="type_stage_id" required>
                                 <option value="">Type</option>
-                                @foreach($typesStage as $key => $type)
-                                    <option value="{{ $key }}">{{ $type }}</option>
+                                @foreach(\App\Models\TypeStage::actif()->get() as $typeStage)
+                                    <option value="{{ $typeStage->id }}">{{ $typeStage->nom }}</option>
                                 @endforeach
                             </select>
-                            <label for="type_stage" class="form-label">Type</label>
+                            <label for="type_stage_id" class="form-label">Type</label>
                         </div>
                     </div>
                 </div>
@@ -62,13 +62,13 @@
                     </div>
                     <div class="col-md-6">
                         <div class="form-floating mb-3">
-                            <select class="form-select" id="secteur" name="secteur" required>
+                            <select class="form-select" id="secteur_id" name="secteur_id" required>
                                 <option value="">Secteur</option>
-                                @foreach($secteurs as $key => $secteur)
-                                    <option value="{{ $key }}">{{ $secteur }}</option>
+                                @foreach(\App\Models\Secteur::actif()->get() as $secteur)
+                                    <option value="{{ $secteur->id }}">{{ $secteur->nom }}</option>
                                 @endforeach
                             </select>
-                            <label for="secteur" class="form-label">Secteur</label>
+                            <label for="secteur_id" class="form-label">Secteur</label>
                         </div>
                     </div>
                 </div>

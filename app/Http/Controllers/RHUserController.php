@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Role;
 use App\Models\OffreStage;
 use App\Models\Candidature;
+use App\Models\Secteur;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -55,7 +56,51 @@ class RHUserController extends Controller
                     $query->where('active', true);
                 } elseif ($status === 'inactive') {
                     $query->where('active', false);
+                } elseif ($status === 'en_cours') {
+                    // Stagiaires et encadrants selon leur statut d'affectation
+                    $query->where(function($q) {
+                        // Stagiaires - essayer plusieurs conditions
+                        $q->whereHas('candidature', function($subQ) {
+                            $subQ->whereIn('statut', ['affecté', 'affectee', 'accepte']);
+                        })
+                        // Stagiaires avec encadrant_id non null (alternative)
+                        ->orWhere(function($subQ) {
+                            $subQ->whereHas('role', function($roleQ) {
+                                $roleQ->where('name', 'stagiaire');
+                            })->whereNotNull('encadrant_id');
+                        })
+                        // Encadrants avec stagiaires affectés
+                        ->orWhereHas('stagiairesAffectes', function($subQ) {
+                            $subQ->whereNotNull('encadrant_id');
+                        });
+                    });
+                } elseif ($status === 'autres') {
+                    // Encadrants sans affectation (généralement)
+                    $query->where(function($q) {
+                        $q->whereHas('role', function($roleQ) {
+                            $roleQ->where('name', 'encadrant');
+                        })
+                        ->whereDoesntHave('stagiairesAffectes');
+                    });
                 }
+            }, function($query) {
+                // Par défaut, appliquer le filtre "en cours"
+                $query->where(function($q) {
+                    // Stagiaires - essayer plusieurs conditions
+                    $q->whereHas('candidature', function($subQ) {
+                        $subQ->whereIn('statut', ['affecté', 'affectee', 'accepte']);
+                    })
+                    // Stagiaires avec encadrant_id non null (alternative)
+                    ->orWhere(function($subQ) {
+                        $subQ->whereHas('role', function($roleQ) {
+                            $roleQ->where('name', 'stagiaire');
+                        })->whereNotNull('encadrant_id');
+                    })
+                    // Encadrants avec stagiaires affectés
+                    ->orWhereHas('stagiairesAffectes', function($subQ) {
+                        $subQ->whereNotNull('encadrant_id');
+                    });
+                });
             })
             ->latest()
             ->paginate(15);
@@ -85,7 +130,12 @@ class RHUserController extends Controller
                                ->orderBy('titre')
                                ->get();
         
-        return view('rh.users.create', compact('offres'));
+        // Récupérer les secteurs disponibles pour les encadrants
+        $secteurs = \App\Models\Secteur::where('actif', true)
+                                       ->orderBy('nom')
+                                       ->get();
+        
+        return view('rh.users.create', compact('offres', 'secteurs'));
     }
 
     /**
@@ -109,7 +159,7 @@ class RHUserController extends Controller
             $allRoles = Role::all()->pluck('name')->toArray();
             \Log::info('Tous les rôles disponibles: ' . json_encode($allRoles));
             
-            $validatedData = $request->validate([
+            $rules = [
                 'nom' => 'required|string|max:255',
                 'prenom' => 'required|string|max:255',
                 'email' => 'required|email|unique:users,email',
@@ -117,7 +167,16 @@ class RHUserController extends Controller
                 'telephone' => 'nullable|string|max:20',
                 'role' => 'required|in:stagiaire,encadrant',
                 'offre_id' => 'nullable|exists:offre_stages,id',
-            ]);
+            ];
+
+            // Ajouter la règle secteur_id obligatoire pour les encadrants
+            if ($request->role === 'encadrant') {
+                $rules['secteur_id'] = 'required|exists:secteurs,id';
+            } else {
+                $rules['secteur_id'] = 'nullable|exists:secteurs,id';
+            }
+
+            $validatedData = $request->validate($rules);
 
             \Log::info('Validation réussie: ' . json_encode($validatedData));
 
@@ -142,6 +201,7 @@ class RHUserController extends Controller
                 'password' => Hash::make($validatedData['password']),
                 'telephone' => $validatedData['telephone'] ?? null,
                 'role_id' => $role->id,
+                'secteur_id' => $validatedData['secteur_id'] ?? null,
                 'email_verified_at' => now(),
             ]);
 
@@ -155,6 +215,14 @@ class RHUserController extends Controller
                 $user->offre_stage_id = $validatedData['offre_id'];
                 $user->save();
                 \Log::info('offre_stage_id du stagiaire mis à jour: ' . $validatedData['offre_id']);
+                
+                // Mettre à jour le statut de l'offre à 'affectée'
+                $offre = OffreStage::find($validatedData['offre_id']);
+                if ($offre) {
+                    $offre->statut = 'affectée';
+                    $offre->save();
+                    \Log::info('Offre ID ' . $validatedData['offre_id'] . ' mise à jour avec le statut "affectée"');
+                }
                 
                 Candidature::create([
                     'nom' => $validatedData['nom'],
@@ -407,6 +475,11 @@ class RHUserController extends Controller
             $q->where('name', 'stagiaire');
         })->with('encadrant', 'role');
 
+        // Par défaut, afficher uniquement les stagiaires non affectés
+        if (!request('assignment_status')) {
+            $query->whereNull('encadrant_id');
+        }
+
         // Filtres
         if (request('search')) {
             $search = request('search');
@@ -442,17 +515,89 @@ class RHUserController extends Controller
     /**
      * Formulaire de création d'affectation
      */
-    public function assignmentsCreate()
+    public function assignmentsCreate(Request $request)
     {
         $stagiaires = User::whereHas('role', function($q) {
             $q->where('name', 'stagiaire');
-        })->get();
+        })->with(['candidature.offreStage.secteur'])->get();
         
-        $encadrants = User::whereHas('role', function($q) {
-            $q->where('name', 'encadrant');
-        })->get();
+        // Récupérer le stagiaire pré-sélectionné si passé en paramètre
+        $selectedStagiaire = null;
+        $encadrants = collect();
+        
+        if ($request->has('stagiaire_id')) {
+            $selectedStagiaire = User::whereHas('role', function($q) {
+                $q->where('name', 'stagiaire');
+            })->with(['candidature.offreStage.secteur'])
+            ->findOrFail($request->stagiaire_id);
+            
+            // Filtrer les encadrants par secteur du stagiaire, ou afficher tous si pas de secteur
+            $secteurId = null;
+            $secteurNom = null;
+            
+            // Essayer d'abord via la relation directe offre_stage_id dans le user
+            if ($selectedStagiaire->offre_stage_id) {
+                $offreStage = OffreStage::find($selectedStagiaire->offre_stage_id);
+                if ($offreStage && $offreStage->secteur_id) {
+                    $secteur = Secteur::find($offreStage->secteur_id);
+                    if ($secteur) {
+                        $secteurId = $offreStage->secteur_id;
+                        $secteurNom = $secteur->nom;
+                    }
+                }
+            }
+            
+            // Si pas trouvé via la relation directe, essayer via la candidature
+            if (!$secteurId && $selectedStagiaire->candidature) {
+                if ($selectedStagiaire->candidature->offreStage && $selectedStagiaire->candidature->offreStage->secteur) {
+                    $secteurId = $selectedStagiaire->candidature->offreStage->secteur_id;
+                    $secteurNom = $selectedStagiaire->candidature->offreStage->secteur->nom;
+                }
+            }
+            
+            // Si secteur trouvé, filtrer les encadrants
+            if ($secteurId) {
+                $encadrants = User::whereHas('role', function($q) {
+                    $q->where('name', 'encadrant');
+                })
+                ->where('secteur_id', $secteurId)
+                ->with(['secteur', 'stagiairesAffectes'])
+                ->get()
+                ->map(function($encadrant) {
+                    return [
+                        'id' => $encadrant->id,
+                        'nom' => $encadrant->nom,
+                        'prenom' => $encadrant->prenom,
+                        'email' => $encadrant->email,
+                        'secteur' => $encadrant->secteur ? $encadrant->secteur->nom : 'Non défini',
+                        'nombre_stagiaires' => $encadrant->stagiairesAffectes->count(),
+                        'disponibilite' => $encadrant->stagiairesAffectes->count() < 5 ? 'Disponible' : 'Charge élevée',
+                        'couleur_disponibilite' => $encadrant->stagiairesAffectes->count() < 5 ? 'success' : 'warning',
+                    ];
+                });
+            } else {
+                // Si pas de secteur défini, afficher tous les encadrants
+                $encadrants = User::whereHas('role', function($q) {
+                    $q->where('name', 'encadrant');
+                })
+                ->with(['secteur', 'stagiairesAffectes'])
+                ->get()
+                ->map(function($encadrant) {
+                    return [
+                        'id' => $encadrant->id,
+                        'nom' => $encadrant->nom,
+                        'prenom' => $encadrant->prenom,
+                        'email' => $encadrant->email,
+                        'secteur' => $encadrant->secteur ? $encadrant->secteur->nom : 'Non défini',
+                        'nombre_stagiaires' => $encadrant->stagiairesAffectes->count(),
+                        'disponibilite' => $encadrant->stagiairesAffectes->count() < 5 ? 'Disponible' : 'Charge élevée',
+                        'couleur_disponibilite' => $encadrant->stagiairesAffectes->count() < 5 ? 'success' : 'warning',
+                    ];
+                });
+            }
+        }
 
-        return view('rh.assignments.create', compact('stagiaires', 'encadrants'));
+        return view('rh.assignments.create', compact('stagiaires', 'encadrants', 'selectedStagiaire'));
     }
 
     /**

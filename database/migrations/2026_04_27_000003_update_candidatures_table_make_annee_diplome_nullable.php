@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('submissions', function (Blueprint $table) {
-            $table->json('fichiers_joints')->nullable();
+        Schema::table('candidatures', function (Blueprint $table) {
+            $table->year('annee_diplome')->nullable()->change();
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('submissions', function (Blueprint $table) {
-            $table->dropColumn('fichiers_joints');
+        Schema::table('candidatures', function (Blueprint $table) {
+            $table->year('annee_diplome')->nullable(false)->change();
         });
     }
 };

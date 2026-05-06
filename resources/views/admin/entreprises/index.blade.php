@@ -55,15 +55,15 @@
                             <div class="small">
                                 <div class="mb-2">
                                     <strong class="text-muted">Secteur:</strong><br>
-                                    <span class="text-dark">{{ $entreprise->secteur ?? 'Technologies de l\'Information' }}</span>
+                                    <span class="text-dark">{{ $entreprise->secteur_activite ?? 'Non spécifié' }}</span>
                                 </div>
                                 <div class="mb-2">
                                     <strong class="text-muted">Email:</strong><br>
-                                    <span class="text-dark">{{ $entreprise->contact_email ?? 'contact@techinnovation.com' }}</span>
+                                    <span class="text-dark">{{ $entreprise->email ?? 'Non spécifié' }}</span>
                                 </div>
                                 <div class="mb-2">
                                     <strong class="text-muted">Téléphone:</strong><br>
-                                    <span class="text-dark">{{ $entreprise->contact_telephone ?? '+33 1 23 45 67 89' }}</span>
+                                    <span class="text-dark">{{ $entreprise->telephone ?? 'Non spécifié' }}</span>
                                 </div>
                             </div>
                         </div>
@@ -72,11 +72,19 @@
                             <div class="small">
                                 <div class="mb-2">
                                     <strong class="text-muted">Siège social:</strong><br>
-                                    <span class="text-dark">{{ $entreprise->adresse ?? '123 Avenue des Technologies' }}</span>
+                                    <span class="text-dark">{{ $entreprise->adresse ?? 'Non spécifié' }}</span>
                                 </div>
                                 <div class="mb-2">
                                     <strong class="text-muted">Ville:</strong><br>
-                                    <span class="text-dark">{{ $entreprise->ville ?? 'Paris' }}</span>
+                                    <span class="text-dark">{{ $entreprise->ville ?? 'Non spécifié' }}</span>
+                                </div>
+                                <div class="mb-2">
+                                    <strong class="text-muted">Code postal:</strong><br>
+                                    <span class="text-dark">{{ $entreprise->code_postal ?? 'Non spécifié' }}</span>
+                                </div>
+                                <div class="mb-2">
+                                    <strong class="text-muted">Pays:</strong><br>
+                                    <span class="text-dark">{{ $entreprise->pays ?? 'Non spécifié' }}</span>
                                 </div>
                                 <div class="mb-2">
                                     <strong class="text-muted">Site web:</strong><br>
@@ -85,9 +93,7 @@
                                             {{ $entreprise->site_web }}
                                         </a>
                                     @else
-                                        <a href="https://techinnovation.com" target="_blank" class="text-primary">
-                                            techinnovation.com
-                                        </a>
+                                        <span class="text-muted">Non spécifié</span>
                                     @endif
                                 </div>
                             </div>

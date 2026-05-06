@@ -17,7 +17,7 @@ return new class extends Migration
             // Informations personnelles du candidat
             $table->string('nom');
             $table->string('prenom');
-            $table->date('date_naissance');
+            $table->date('date_naissance')->nullable();
             $table->string('email');
             $table->string('telephone');
             $table->text('adresse')->nullable();

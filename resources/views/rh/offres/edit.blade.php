@@ -50,11 +50,22 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Secteur d'activité *</label>
-                        <select class="form-select" name="secteur" required>
+                        <select class="form-select" name="secteur_id" required>
                             <option value="">Choisir un secteur...</option>
-                            @foreach($secteurs as $key => $secteur)
-                                <option value="{{ $key }}" {{ old('secteur', $offre->secteur) == $key ? 'selected' : '' }}>
-                                    {{ $secteur }}
+                            @foreach(\App\Models\Secteur::actif()->get() as $secteur)
+                                <option value="{{ $secteur->id }}" {{ old('secteur_id', $offre->secteur_id) == $secteur->id ? 'selected' : '' }}>
+                                    {{ $secteur->nom }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Type de stage *</label>
+                        <select class="form-select" name="type_stage_id" required>
+                            <option value="">Choisir un type...</option>
+                            @foreach(\App\Models\TypeStage::actif()->get() as $typeStage)
+                                <option value="{{ $typeStage->id }}" {{ old('type_stage_id', $offre->type_stage_id) == $typeStage->id ? 'selected' : '' }}>
+                                    {{ $typeStage->nom }}
                                 </option>
                             @endforeach
                         </select>
@@ -68,19 +79,8 @@
                                value="{{ old('lieu', $offre->lieu) }}"
                                required>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Durée (semaines) *</label>
-                        <input type="number" 
-                               class="form-control" 
-                               name="duree_semaines" 
-                               placeholder="12" 
-                               min="1" 
-                               max="52"
-                               value="{{ old('duree_semaines', $offre->duree_semaines) }}"
-                               required>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Rémunération (€/mois)</label>
+                    <div class="col-md-6">
+                        <label class="form-label">Rémunération (TND/mois)</label>
                         <input type="number" 
                                class="form-control" 
                                name="remuneration" 
@@ -89,6 +89,7 @@
                                max="9999.99"
                                step="0.01"
                                value="{{ old('remuneration', $offre->remuneration) }}">
+                        <small class="text-muted">Optionnel - Laissez vide si non spécifié</small>
                     </div>
                 </div>
             </div>
@@ -129,7 +130,7 @@
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-light">
                 <h5 class="mb-0">
-                    <i class="fas fa-calendar"></i> Période et Entreprise
+                    <i class="fas fa-calendar"></i> Période 
                 </h5>
             </div>
             <div class="card-body">
@@ -150,18 +151,7 @@
                                value="{{ old('date_fin', $offre->date_fin ? $offre->date_fin->format('Y-m-d') : '') }}">
                         <small class="text-muted">Date limite de candidature</small>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Entreprise *</label>
-                        <select class="form-select" name="entreprise_id" required>
-                            <option value="">Choisir une entreprise...</option>
-                            @foreach($entreprises as $entreprise)
-                                <option value="{{ $entreprise->id }}" {{ old('entreprise_id', $offre->entreprise_id) == $entreprise->id ? 'selected' : '' }}>
-                                    {{ $entreprise->nom }} ({{ $entreprise->ville }})
-                                </option>
-                            @endforeach
-                        </select>
                     </div>
-                </div>
             </div>
         </div>
 
@@ -187,11 +177,15 @@
                             <option value="cloturee" {{ old('statut', $offre->statut) == 'cloturee' ? 'selected' : '' }}>
                                 ❌ Clôturée (plus de candidatures)
                             </option>
+                            <option value="affectee" {{ old('statut', $offre->statut) == 'affectee' ? 'selected' : '' }}>
+                                🎯 Affectée (candidat sélectionné)
+                            </option>
                         </select>
                         <small class="text-muted">
                             <strong>Brouillon :</strong> Enregistrement sans publication<br>
                             <strong>Publiée :</strong> Visible immédiatement par les candidats<br>
-                            <strong>Clôturée :</strong> Plus recevable pour les candidatures
+                            <strong>Clôturée :</strong> Plus recevable pour les candidatures<br>
+                            <strong>Affectée :</strong> Candidat sélectionné et offre retirée du public
                         </small>
                     </div>
                 </div>

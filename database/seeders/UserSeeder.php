@@ -80,7 +80,7 @@ class UserSeeder extends Seeder
         }
 
         $this->command->info('Utilisateurs de test créés avec succès !');
-        $this->command->info('');  
+        $this->command->info('');
         $this->command->info('=== ADMINS (5) ===');
         $this->command->info('- admin1@tech-innovation.fr / password');
         $this->command->info('- admin2@tech-innovation.fr / password');

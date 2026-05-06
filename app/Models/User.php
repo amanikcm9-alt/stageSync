@@ -11,7 +11,7 @@ class User extends Authenticatable
 use Notifiable;
     use HasFactory;
 
-    protected $fillable = ['nom','prenom','email','password','role_id','encadrant_id','active','telephone'];
+    protected $fillable = ['nom','prenom','email','password','role_id','encadrant_id','secteur_id','active'];
 
     public function role()
     {
@@ -46,6 +46,21 @@ use Notifiable;
     // Pour accéder aux activités de l'utilisateur
     public function activities(){
         return $this->hasMany(Activity::class, 'user_id');
+    }
+
+    // Pour accéder au secteur de l'utilisateur
+    public function secteur(){
+        return $this->belongsTo(Secteur::class);
+    }
+
+    // Pour accéder aux stagiaires affectés (alias pour la clarté)
+    public function stagiairesAffectes(){
+        return $this->hasMany(User::class, 'encadrant_id');
+    }
+
+    // Pour accéder à la candidature du stagiaire
+    public function candidature(){
+        return $this->hasOne(Candidature::class, 'user_id');
     }
 
     // Pour accéder aux discussions de l'utilisateur

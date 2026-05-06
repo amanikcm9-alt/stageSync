@@ -113,7 +113,7 @@
                             @if(isset($offres) && $offres->count() > 0)
                                 @foreach($offres as $offre)
                                     <option value="{{ $offre->id }}" {{ old('offre_id') == $offre->id ? 'selected' : '' }}>
-                                        {{ $offre->titre }} - {{ $offre->entreprise->nom }}
+                                        {{ $offre->titre }}
                                     </option>
                                 @endforeach
                             @else
@@ -124,6 +124,30 @@
                             <div class="text-danger small">{{ $message }}</div>
                         @enderror
                         <small class="text-muted">Sélectionnez l'offre de stage pour ce stagiaire</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row" id="secteur-row" style="display: none;">
+                <div class="col-md-12">
+                    <div class="mb-3">
+                        <label for="secteur_id" class="form-label">Secteur *</label>
+                        <select class="form-select" id="secteur_id" name="secteur_id">
+                            <option value="">Sélectionner un secteur</option>
+                            @if(isset($secteurs) && $secteurs->count() > 0)
+                                @foreach($secteurs as $secteur)
+                                    <option value="{{ $secteur->id }}" {{ old('secteur_id') == $secteur->id ? 'selected' : '' }}>
+                                        {{ $secteur->nom }}
+                                    </option>
+                                @endforeach
+                            @else
+                                <option value="">Aucun secteur disponible</option>
+                            @endif
+                        </select>
+                        @error('secteur_id')
+                            <div class="text-danger small">{{ $message }}</div>
+                        @enderror
+                        <small class="text-muted">Un encadrant doit toujours avoir un secteur défini</small>
                     </div>
                 </div>
             </div>
@@ -155,21 +179,36 @@ function toggleOffreField() {
     }
 }
 
+function toggleSecteurField() {
+    const roleSelect = document.getElementById('role');
+    const secteurRow = document.getElementById('secteur-row');
+    
+    if (roleSelect.value === 'encadrant') {
+        secteurRow.style.display = 'flex';
+        document.getElementById('secteur_id').setAttribute('required', 'required');
+    } else {
+        secteurRow.style.display = 'none';
+        document.getElementById('secteur_id').removeAttribute('required');
+    }
+}
+
 document.getElementById('role').addEventListener('change', function() {
     const descriptions = {
         'stagiaire': 'Étudiant en stage qui bénéficie d\'un encadrant pour son suivi et sa formation.',
-        'encadrant': 'Professionnel qui encadre et supervise un ou plusieurs stagiaires.'
+        'encadrant': 'Professionnel qui encadre et supervise un ou plusieurs stagiaires. Un encadrant doit toujours avoir un secteur défini.'
     };
     
     const description = descriptions[this.value] || 'Sélectionnez un rôle pour voir la description';
     document.getElementById('role-description').textContent = description;
     
     toggleOffreField();
+    toggleSecteurField();
 });
 
 // Initialiser l'affichage au chargement de la page
 document.addEventListener('DOMContentLoaded', function() {
     toggleOffreField();
+    toggleSecteurField();
 });
 </script>
 @endsection

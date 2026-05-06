@@ -21,9 +21,9 @@
                             <div>
                                 <h6 class="mb-1 fs-6 fw-bold">{{ $offre->titre }}</h6>
                                 <small class="text-muted">
-                                    <strong>{{ $offre->entreprise->nom }}</strong><br>
+                                    <strong>{{ $offre->entreprise?->nom ?? 'Entreprise non spécifiée' }}</strong><br>
                                     <i class="fas fa-map-marker-alt"></i> {{ $offre->lieu }} | 
-                                    <i class="fas fa-clock"></i> {{ $offre->duree }} semaines
+                                    <i class="fas fa-clock"></i> {{ $offre->duree_semaines ?? 'N/A' }}
                                 </small>
                             </div>
                             <div class="text-end">
@@ -179,6 +179,20 @@
                             @error('lettre_motivation')
                                 <div class="invalid-feedback small">{{ $message }}</div>
                             @enderror
+                        </div>
+
+                        <!-- Lettre de motivation (fichier) -->
+                        <div class="mb-3">
+                            <label for="lettre_motivation_file" class="form-label small fw-bold">Lettre de motivation (PDF, optionnel)</label>
+                            <input type="file" 
+                                   class="form-control form-control-sm @error('lettre_motivation_file') is-invalid @enderror" 
+                                   id="lettre_motivation_file" 
+                                   name="lettre_motivation_file" 
+                                   accept=".pdf">
+                            @error('lettre_motivation_file')
+                                <div class="invalid-feedback small">{{ $message }}</div>
+                            @enderror
+                            <small class="text-muted">Format PDF uniquement, taille maximale 2MB (optionnel)</small>
                         </div>
 
                         <!-- Boutons -->

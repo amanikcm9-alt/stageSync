@@ -56,7 +56,53 @@
         </div>
     </div>
 
-    
+    <!-- Notifications -->
+    @if($notifications->count() > 0)
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-bell text-warning"></i> 
+                            Notifications ({{ $notifications->count() }})
+                        </h6>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="marquerNotificationsLues()">
+                            <i class="fas fa-check"></i> Marquer comme lues
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-2">
+                    @foreach($notifications as $notification)
+                    <div class="notification-item d-flex align-items-start p-2 border-bottom">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <small class="text-muted d-block">
+                                        @if($notification->sender)
+                                            <i class="fas fa-user"></i> {{ $notification->sender->prenom }} {{ $notification->sender->nom }}
+                                        @else
+                                            <i class="fas fa-robot"></i> Système
+                                        @endif
+                                    </small>
+                                    <p class="mb-1 small">{{ $notification->message }}</p>
+                                    @if($notification->activity)
+                                        <small class="text-muted">
+                                            <i class="fas fa-tasks"></i> {{ $notification->activity->titre }}
+                                        </small>
+                                    @endif
+                                </div>
+                                <small class="text-muted">{{ $notification->created_at->diffForHumans() }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Section Mes Stagiaires -->
     <a href="#" onclick="toggleStagiairesSection()" class="card border-0 shadow-sm mb-3 text-decoration-none">
         <div class="card-header bg-primary text-white">
@@ -98,18 +144,7 @@
                                             @endif
                                         </small>
                                     </div>
-                                    <button type="button" class="btn btn-xs btn-outline-info" 
-                                        data-offre-id="{{ $stagiaire->offre_stage->id }}" 
-                                        data-offre-titre="{{ $stagiaire->offre_stage->titre }}"
-                                        data-stagiaire-id="{{ $stagiaire->id }}"
-                                        data-stagiaire-nom="{{ $stagiaire->nom }}"
-                                        data-stagiaire-prenom="{{ $stagiaire->prenom }}"
-                                        data-stagiaire-email="{{ $stagiaire->email }}"
-                                        data-stagiaire-telephone="{{ $stagiaire->telephone ?? '' }}"
-                                        data-stagiaire-activities-count="{{ $stagiaire->activities->count() }}"
-                                        data-stagiaire-activities-en-cours="{{ $stagiaire->activities->where('statut', 'en_cours')->count() }}"
-                                        onclick="voirDetailsOffre(this)" 
-                                        style="font-size: 0.7rem; padding: 2px 6px;">
+                                    <button type="button" class="btn btn-xs btn-outline-info" data-offre-id="{{ $stagiaire->offre_stage->id }}" data-offre-titre="{{ $stagiaire->offre_stage->titre }}" onclick="voirDetailsOffre(this)" style="font-size: 0.7rem; padding: 2px 6px;">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
@@ -143,14 +178,302 @@
         </div>
     </a>
 
-    <!-- Section Notifications Récentes effacée -->
+    <!-- Section détaillée des stagiaires (cachée par défaut) -->
+    <div id="stagiaires-details" style="display: none;">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-users"></i> Détails des stagiaires
+                    <button type="button" class="btn btn-sm btn-outline-light float-end" onclick="toggleStagiairesSection()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </h6>
+            </div>
+            <div class="card-body">
+                @if($stagiaires->count() > 0)
+                <div class="row">
+                    @foreach($stagiaires as $stagiaire)
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body p-3">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                        {{ strtoupper(substr($stagiaire->prenom, 0, 1)) }}{{ strtoupper(substr($stagiaire->nom, 0, 1)) }}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="card-title mb-1">{{ $stagiaire->prenom }} {{ $stagiaire->nom }}</h6>
+                                        <small class="text-muted">{{ $stagiaire->email }}</small>
+                                    </div>
+                                </div>
+                                
+                                <!-- Informations sur l'offre de stage -->
+                            @if($stagiaire->offre_stage)
+                            <div class="mb-3 p-2 bg-light rounded border">
+                                    <div class="d-flex align-items-start mb-2">
+                                        <i class="fas fa-briefcase text-primary me-2 mt-1"></i>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <small class="fw-bold text-primary">Offre de stage</small>
+                                                    <div class="mt-1">
+                                                        <strong class="d-block">{{ $stagiaire->offre_stage->titre }}</strong>
+                                                        <small class="text-muted d-block">
+                                                            @if($stagiaire->offre_stage->entreprise)
+                                                            {{ $stagiaire->offre_stage->entreprise->nom }} - 
+                                                            @endif
+                                                            {{ $stagiaire->offre_stage->duree_semaines }} semaines
+                                                        </small>
+                                                    </div>
+                                                    @if($stagiaire->offre_stage->description)
+                                                    <div class="mt-2">
+                                                        <small class="text-muted">{{ Str::limit($stagiaire->offre_stage->description, 100) }}</small>
+                                                    </div>
+                                                    @endif
+                                                    <div class="mt-2">
+                                                        <small class="badge bg-info text-white">
+                                                            <i class="fas fa-calendar-alt me-1"></i>
+                                                            {{ $stagiaire->offre_stage->date_debut ? $stagiaire->offre_stage->date_debut->format('d/m/Y') : 'Date non définie' }} - 
+                                                            {{ $stagiaire->offre_stage->date_fin ? $stagiaire->offre_stage->date_fin->format('d/m/Y') : 'Date non définie' }}
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <button type="button" class="btn btn-sm btn-outline-info" data-offre-id="{{ $stagiaire->offre_stage->id }}" data-offre-titre="{{ $stagiaire->offre_stage->titre }}" onclick="voirDetailsOffre(this)">
+                                                        <i class="fas fa-eye"></i> Détails
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @else
+                                <div class="mb-3 p-2 bg-warning bg-opacity-10 rounded border border-warning">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                            <small class="text-warning">Aucune offre de stage assignée</small>
+                                        </div>
+                                                                            </div>
+                                </div>
+                                @endif
+                                
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <small class="text-muted fw-bold">Activités assignées</small>
+                                        <span class="badge bg-info">{{ $stagiaire->activities->count() }}</span>
+                                    </div>
+                                            
+                                    <!-- Statistiques des activités du stagiaire -->
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <div class="text-center p-2 bg-light rounded">
+                                                <small class="text-muted d-block">En cours</small>
+                                                <strong class="text-info">{{ $stagiaire->activities->where('statut', 'en_cours')->count() }}</strong>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="text-center p-2 bg-light rounded">
+                                                <small class="text-muted d-block">Soumises</small>
+                                                <strong class="text-warning">{{ $stagiaire->activities->where('statut', 'soumise')->count() }}</strong>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="text-center p-2 bg-light rounded">
+                                                <small class="text-muted d-block">Validées</small>
+                                                <strong class="text-success">{{ $stagiaire->activities->where('statut', 'validee')->count() }}</strong>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="text-center p-2 bg-light rounded">
+                                                <small class="text-muted d-block">En retard</small>
+                                                <strong class="text-danger">{{ $stagiaire->activities->filter(fn($a) => $a->estEnRetard())->count() }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Actions rapides -->
+                                @if($stagiaire->offre_stage)
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-info" data-offre-id="{{ $stagiaire->offre_stage->id }}" data-offre-titre="{{ $stagiaire->offre_stage->titre }}" onclick="voirDetailsOffre(this)">
+                                        <i class="fas fa-eye"></i> Voir détails
+                                    </button>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                @else
+                <div class="text-center py-4">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <h6 class="text-muted">Aucun stagiaire affecté</h6>
+                    <p class="text-muted small">Vous n'avez pas encore de stagiaires assignés.</p>
+                </div>
+                @endif
+            </div>
+        </div>
+    </div>
 
-    <!-- Section Mes Documents effacée -->
+    <!-- Section Notifications -->
+    <div class="card border-0 shadow-sm mb-3 notifications-section">
+        <div class="card-header bg-warning text-dark">
+            <h6 class="mb-0">
+                <i class="fas fa-bell"></i> Notifications Récentes
+                @if($notifications->count() > 0)
+                <span class="badge bg-danger ms-2">{{ $notifications->count() }}</span>
+                @endif
+            </h6>
+        </div>
+        <div class="card-body">
+            @if($notifications->count() > 0)
+                <div class="row">
+                    @foreach($notifications->take(6) as $notification)
+                    <div class="col-md-6 mb-2">
+                        <div class="card border-0 shadow-sm h-100 notification-card" data-notification-id="{{ $notification->id }}">
+                            <div class="card-body p-2">
+                                <div class="d-flex align-items-start">
+                                    <div class="avatar-sm bg-info text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px;">
+                                        {{ strtoupper(substr($notification->sender->prenom, 0, 1)) }}{{ strtoupper(substr($notification->sender->nom, 0, 1)) }}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-bold tiny">{{ $notification->sender->prenom }} {{ $notification->sender->nom }}</div>
+                                        <div class="tiny text-muted mb-1">{{ $notification->message }}</div>
+                                        @if($notification->activity)
+                                        <div class="tiny">
+                                            <span class="badge bg-primary">Activité: {{ $notification->activity->titre }}</span>
+                                        </div>
+                                        @endif
+                                        <div class="tiny text-muted mt-1">
+                                            <i class="fas fa-clock"></i> {{ $notification->created_at->diffForHumans() }}
+                                        </div>
+                                    </div>
+                                    <div class="ms-2">
+                                        @if(!$notification->read)
+                                        <span class="badge bg-danger rounded-circle p-1" style="width: 8px; height: 8px;"></span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                @if($notifications->count() > 6)
+                <div class="text-center mt-2">
+                    <a href="#" class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-eye"></i> Voir toutes les notifications
+                    </a>
+                </div>
+                @endif
+            @else
+                <div class="text-center py-3">
+                    <i class="fas fa-bell-slash fa-2x text-muted mb-2"></i>
+                    <h6 class="text-muted small">Aucune notification</h6>
+                    <p class="text-muted small">Vous n'avez pas reçu de nouvelles notifications.</p>
+                </div>
+            @endif
+        </div>
+    </div>
+
+    <!-- Section Documents -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header bg-warning text-white">
+            <h6 class="mb-0">
+                <i class="fas fa-book"></i> Mes Documents
+            </h6>
+        </div>
+        <div class="card-body">
+            @if($documents->count() > 0)
+            <div class="row">
+                @foreach($documents->take(6) as $document)
+                <div class="col-md-4 mb-2">
+                    <div class="card border-0 shadow-sm h-100 small">
+                        <div class="card-body p-2">
+                            <div class="d-flex align-items-center">
+                                <i class="fas {{ $document->type_icon }} text-{{ $document->type_color }} me-1 small"></i>
+                                <div class="flex-grow-1">
+                                    <small class="fw-bold small">{{ $document->titre }}</small>
+                                    <br>
+                                    <small class="text-muted small">{{ $document->type_label }}</small>
+                                </div>
+                                <a href="{{ $document->lien }}" target="_blank" class="btn btn-sm btn-outline-primary btn-sm small">
+                                    <i class="fas fa-eye small"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+            @if($documents->count() > 6)
+            <div class="text-center mt-2">
+                <a href="{{ route('documents.index') }}" class="btn btn-sm btn-outline-primary btn-sm small">
+                    Voir tous les documents
+                </a>
+            </div>
+            @endif
+            @else
+            <div class="text-center py-3">
+                <i class="fas fa-book fa-2x text-muted mb-2"></i>
+                <h6 class="text-muted small">Aucun document</h6>
+                <p class="text-muted small">Vous n'avez pas encore publié de documents.</p>
+            </div>
+            @endif
+        </div>
+    </div>
 </div>
+
+    <!-- Section Évaluations -->
+    <a href="{{ route('encadrant.evaluations.index') }}" class="card border-0 shadow-sm mb-3 text-decoration-none">
+        <div class="card-header bg-success text-white">
+            <h6 class="mb-0">
+                <i class="fas fa-clipboard-check"></i> Évaluations
+                <small class="float-end">
+                    <i class="fas fa-arrow-right"></i>
+                </small>
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar bg-white text-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1 text-white">Gérer les évaluations</h6>
+                            <small class="text-white-50">Évaluer les stagiaires et consulter les auto-évaluations</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="text-white">
+                        <div class="h4 mb-0">{{ $evaluations->count() }}</div>
+                        <small>Évaluations</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </a>
+
 @endsection
 
 @section('scripts')
 <script>
+// Fonction pour afficher/masquer les notifications
+function toggleNotifications() {
+    const notificationsSection = document.querySelector('.notifications-section');
+    if (notificationsSection) {
+        notificationsSection.scrollIntoView({ behavior: 'smooth' });
+        // Ajouter un effet de surbrillance temporaire
+        notificationsSection.classList.add('border-info', 'border-2');
+        setTimeout(() => {
+            notificationsSection.classList.remove('border-info', 'border-2');
+        }, 2000);
+    }
+}
 
 // Fonction pour afficher/masquer la section détaillée des stagiaires
 function toggleStagiairesSection() {
@@ -177,14 +500,7 @@ function toggleStagiairesSection() {
 function voirDetailsOffre(button) {
     const offreId = button.getAttribute('data-offre-id');
     const offreTitre = button.getAttribute('data-offre-titre');
-    const stagiaireId = button.getAttribute('data-stagiaire-id');
-    const stagiaireNom = button.getAttribute('data-stagiaire-nom');
-    const stagiairePrenom = button.getAttribute('data-stagiaire-prenom');
-    const stagiaireEmail = button.getAttribute('data-stagiaire-email');
-    const stagiaireTelephone = button.getAttribute('data-stagiaire-telephone');
-    const stagiaireActivitiesCount = button.getAttribute('data-stagiaire-activities-count');
-    const stagiaireActivitiesEnCours = button.getAttribute('data-stagiaire-activities-en-cours');
-    console.log('DEBUG: voirDetailsOffre appelé avec offreId:', offreId, 'offreTitre:', offreTitre, 'stagiaireEmail:', stagiaireEmail);
+    console.log('DEBUG: voirDetailsOffre appelé avec offreId:', offreId, 'offreTitre:', offreTitre);
     
     const csrfToken = document.querySelector('meta[name="csrf-token"]');
     if (!csrfToken) {
@@ -264,7 +580,7 @@ function voirDetailsOffre(button) {
             const modalBody = document.querySelector('#offreDetailsModal .modal-body');
             
             modalBody.innerHTML = '<div class="row">' +
-                '<div class="col-12">' +
+                '<div class="col-md-8">' +
                     '<div class="mb-3">' +
                         '<h5 class="text-primary">' + offre.titre + '</h5>' +
                         (offre.entreprise ? '<p class="text-muted"><i class="fas fa-building me-2"></i>' + offre.entreprise.nom + '</p>' : '') +
@@ -313,23 +629,25 @@ function voirDetailsOffre(button) {
                             '</div>' +
                         '</div>' +
                     '</div>' : '') +
-                    
-                    (offre.secteur ? 
-                    '<div class="mb-3">' +
-                        '<small class="text-muted">Secteur:</small><br>' +
-                        '<strong>' + offre.secteur + '</strong>' +
-                    '</div>' : '') +
-                    
-                    (offre.lieu ? 
-                    '<div class="mb-3">' +
-                        '<small class="text-muted">Lieu:</small><br>' +
-                        '<strong>' + offre.lieu + '</strong>' +
-                    '</div>' : '') +
                 '</div>' +
                 
-                                
-                                
-                                            
+                '<div class="col-md-4">' +
+                    '<div class="card border-0 shadow-sm h-100">' +
+                        '<div class="card-body">' +
+                            '<h6 class="text-muted mb-3">Informations complémentaires</h6>' +
+                            
+                            (offre.secteur ? 
+                            '<div class="mb-2">' +
+                                '<small class="text-muted">Secteur:</small><br>' +
+                                '<strong>' + offre.secteur + '</strong>' +
+                            '</div>' : '') +
+                            
+                            (offre.lieu ? 
+                            '<div class="mb-2">' +
+                                '<small class="text-muted">Lieu:</small><br>' +
+                                '<strong>' + offre.lieu + '</strong>' +
+                            '</div>' : '') +
+                            
                             (offre.type_stage ? 
                             '<div class="mb-2">' +
                                 '<small class="text-muted">Type:</small><br>' +
@@ -341,99 +659,9 @@ function voirDetailsOffre(button) {
                                     offre.statut.charAt(0).toUpperCase() + offre.statut.slice(1) +
                                 '</small>' +
                             '</div>' +
-                            
-                            '<div class="mt-4">' +
-                                '<div class="card border-0 shadow-sm">' +
-                                    '<div class="card-body">' +
-                                        '<h6 class="text-primary mb-3"><i class="fas fa-graduation-cap me-2 text-primary"></i>Informations du stagiaire</h6>' +
-                                        
-                                        '<div class="row">' +
-                                            '<div class="col-md-6">' +
-                                                '<div class="mb-2">' +
-                                                    '<small class="text-muted">Nom:</small><br>' +
-                                                    '<strong>' + (stagiaireNom || 'Non renseigné') + '</strong>' +
-                                                '</div>' +
-                                            '</div>' +
-                                            '<div class="col-md-6">' +
-                                                '<div class="mb-2">' +
-                                                    '<small class="text-muted">Prénom:</small><br>' +
-                                                    '<strong>' + (stagiairePrenom || 'Non renseigné') + '</strong>' +
-                                                '</div>' +
-                                            '</div>' +
-                                        '</div>' +
-                                        
-                                        '<div class="row">' +
-                                            '<div class="col-md-6">' +
-                                                '<div class="mb-2">' +
-                                                    '<small class="text-muted">Email:</small><br>' +
-                                                    '<strong>' + (stagiaireEmail || 'Non renseigné') + '</strong>' +
-                                                '</div>' +
-                                            '</div>' +
-                                            '<div class="col-md-6">' +
-                                                '<div class="mb-2">' +
-                                                    '<small class="text-muted">Téléphone:</small><br>' +
-                                                    '<strong>' + (stagiaireTelephone || 'Non renseigné') + '</strong>' +
-                                                '</div>' +
-                                            '</div>' +
-                                        '</div>' +
-                                        
-                                                                                
-                                        '<div class="row mt-3">' +
-                                            '<div class="col-12">' +
-                                                '<a href="/activities/create?stagiaire_id=' + (stagiaireId || '') + '" class="btn btn-success w-100">' +
-                                                    '<i class="fas fa-plus me-2"></i>Ajouter une activité' +
-                                                '</a>' +
-                                            '</div>' +
-                                        '</div>' +
-                                    '</div>' +
-                                '</div>' +
-                            '</div>' +
                         '</div>' +
                     '</div>' +
                 '</div>' +
-            '</div>' +
-            
-            // Informations du stagiaire sur toute la largeur
-            (offre.stagiaire ? 
-            '<div class="row mt-4">' +
-                '<div class="col-12">' +
-                    '<div class="card border-primary">' +
-                        '<div class="card-header bg-primary text-white">' +
-                            '<h6 class="mb-0">' +
-                                '<i class="fas fa-user-graduate text-white me-2"></i>' +
-                                'Informations du Stagiaire' +
-                            '</h6>' +
-                        '</div>' +
-                        '<div class="card-body">' +
-                            '<div class="row">' +
-                                '<div class="col-md-6">' +
-                                    '<div class="d-flex align-items-center mb-3 bg-light rounded p-2">' +
-                                        '<div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">' +
-                                            offre.stagiaire.prenom.charAt(0).toUpperCase() + offre.stagiaire.nom.charAt(0).toUpperCase() +
-                                        '</div>' +
-                                        '<div class="flex-grow-1">' +
-                                            '<h6 class="mb-1 text-primary">' + offre.stagiaire.prenom + ' ' + offre.stagiaire.nom + '</h6>' +
-                                            '<small class="text-primary">' + offre.stagiaire.email + '</small>' +
-                                        '</div>' +
-                                    '</div>' +
-                                '</div>' +
-                                '<div class="col-md-6">' +
-                                    '<div class="text-end">' +
-                                        '<small class="text-muted d-block">Activités en cours</small>' +
-                                        '<span class="badge bg-primary">' + (offre.stagiaire.activities_count || 0) + '</span>' +
-                                    '</div>' +
-                                '</div>' +
-                            '</div>' +
-                            '<div class="mt-3">' +
-                                '<button type="button" class="btn btn-success btn-sm" onclick="ajouterActiviteStagiaire(' + offre.stagiaire.id + ', \'' + offre.stagiaire.prenom + ' ' + offre.stagiaire.nom + '\')">' +
-                                    '<i class="fas fa-plus me-2"></i>' +
-                                    'Ajouter une activité' +
-                                '</button>' +
-                            '</div>' +
-                        '</div>' +
-                    '</div>' +
-                '</div>' +
-            '</div>' : '') +
             '</div>';
             console.log('DEBUG: Contenu de la modale mis à jour');
         } else {
@@ -459,74 +687,6 @@ function voirDetailsOffre(button) {
         console.log('DEBUG: Modale fermée, nettoyage...');
         this.remove();
     });
-}
-
-// Fonction pour ajouter une activité à un stagiaire
-function ajouterActiviteStagiaire(stagiaireId, stagiaireNom) {
-    // Rediriger vers la page de création d'activité avec le stagiaire pré-sélectionné
-    window.location.href = '/activities/create?stagiaire_id=' + stagiaireId + '&stagiaire_nom=' + encodeURIComponent(stagiaireNom);
-}
-
-// Fonction pour modifier une offre
-function modifierOffre(button) {
-    const offreId = button.getAttribute('data-offre-id');
-    const offreTitre = button.getAttribute('data-offre-titre');
-    
-    // Rediriger vers la page de modification de l'offre
-    window.location.href = '/offres/' + offreId + '/edit';
-}
-
-// Fonction pour archiver une offre
-function archiverOffre(button) {
-    const offreId = button.getAttribute('data-offre-id');
-    const offreTitre = button.getAttribute('data-offre-titre');
-    
-    if (confirm('Êtes-vous sûr de vouloir archiver l\'offre "' + offreTitre + '" ?')) {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        
-        fetch('/offres/' + offreId + '/archiver', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': csrfToken,
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Afficher un message de succès
-                const toast = '<div class="toast align-items-center text-white bg-success border-0" role="alert">' +
-                    '<div class="d-flex">' +
-                        '<div class="toast-body">' +
-                            '<i class="fas fa-check-circle me-2"></i>' +
-                            'Offre archivée avec succès' +
-                        '</div>' +
-                    '</div>' +
-                '</div>';
-                
-                // Créer et afficher le toast
-                const toastContainer = document.createElement('div');
-                toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
-                toastContainer.innerHTML = toast;
-                document.body.appendChild(toastContainer);
-                
-                const toastElement = toastContainer.querySelector('.toast');
-                const bsToast = new bootstrap.Toast(toastElement);
-                bsToast.show();
-                
-                // Recharger la page après 2 secondes
-                setTimeout(() => {
-                    location.reload();
-                }, 2000);
-            } else {
-                alert('Erreur lors de l\'archivage: ' + (data.error || 'Erreur inconnue'));
-            }
-        })
-        .catch(error => {
-            console.error('Erreur:', error);
-            alert('Erreur lors de l\'archivage de l\'offre');
-        });
-    }
 }
 
 // Fonction pour ouvrir une discussion générale avec un stagiaire
@@ -648,4 +808,37 @@ function sendMessage() {
     });
 }
 
+// Fonction pour marquer les notifications comme lues
+function marquerNotificationsLues() {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    fetch('/notifications/marquer-lues', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Masquer la section des notifications
+            const notificationsSection = document.querySelector('.card:has(.fa-bell)');
+            if (notificationsSection) {
+                notificationsSection.style.display = 'none';
+            }
+            
+            // Recharger la page pour mettre à jour le compteur
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            alert('Erreur lors du marquage des notifications comme lues');
+        }
+    })
+    .catch(error => {
+        console.error('Erreur lors du marquage des notifications:', error);
+        alert('Erreur lors du marquage des notifications comme lues');
+    });
+}
 </script>

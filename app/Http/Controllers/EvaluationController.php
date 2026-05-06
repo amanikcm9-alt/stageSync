@@ -407,4 +407,121 @@ class EvaluationController extends Controller
         
         return response()->json($stats);
     }
+
+    /**
+     * Créer une évaluation de l'organisation
+     */
+    public function createOrganisation(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Vérifier que l'utilisateur est un stagiaire
+        if ($user->role->name !== 'stagiaire') {
+            return redirect()->back()->with('error', 'Accès non autorisé');
+        }
+
+        return view('evaluations.organisation.create', [
+            'user' => $user,
+            'evaluation_type' => 'organisation'
+        ]);
+    }
+
+    /**
+     * Créer une évaluation de l'encadrant
+     */
+    public function createEncadrant(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Vérifier que l'utilisateur est un stagiaire
+        if ($user->role->name !== 'stagiaire') {
+            return redirect()->back()->with('error', 'Accès non autorisé');
+        }
+
+        return view('evaluations.encadrant.create', [
+            'user' => $user,
+            'evaluation_type' => 'encadrant'
+        ]);
+    }
+
+    /**
+     * Créer une auto-évaluation
+     */
+    public function createAuto(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Vérifier que l'utilisateur est un stagiaire
+        if ($user->role->name !== 'stagiaire') {
+            return redirect()->back()->with('error', 'Accès non autorisé');
+        }
+
+        return view('evaluations.auto.create', [
+            'user' => $user,
+            'evaluation_type' => 'auto'
+        ]);
+    }
+
+    /**
+     * Créer une évaluation de stagiaire (pour l'encadrant)
+     */
+    public function createStagiaire(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Vérifier que l'utilisateur est un encadrant
+        if ($user->role->name !== 'encadrant') {
+            return redirect()->back()->with('error', 'Accès non autorisé');
+        }
+
+        // Récupérer les stagiaires de l'encadrant
+        $stagiaires = User::whereHas('role', fn($q) => $q->where('name', 'stagiaire'))
+            ->where(function($query) use ($user) {
+                $query->where('encadrant_id', $user->id)
+                      ->orWhere('encadrant_faculte_id', $user->id)
+                      ->orWhere('encadrant_entreprise_id', $user->id);
+            })
+            ->get();
+
+        return view('evaluations.stagiaire.create', [
+            'user' => $user,
+            'stagiaires' => $stagiaires,
+            'type' => 'stagiaire'
+        ]);
+    }
+
+    /**
+     * Afficher les auto-évaluations des stagiaires
+     */
+    public function indexAutoEvaluations(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Vérifier que l'utilisateur est un encadrant
+        if ($user->role->name !== 'encadrant') {
+            return redirect()->back()->with('error', 'Accès non autorisé');
+        }
+
+        // Récupérer les stagiaires de l'encadrant
+        $stagiaires = User::whereHas('role', fn($q) => $q->where('name', 'stagiaire'))
+            ->where(function($query) use ($user) {
+                $query->where('encadrant_id', $user->id)
+                      ->orWhere('encadrant_faculte_id', $user->id)
+                      ->orWhere('encadrant_entreprise_id', $user->id);
+            })
+            ->get();
+
+        // Récupérer les auto-évaluations (évaluateur_id == stagiaire_id) pour ces stagiaires
+        $autoEvaluations = Evaluation::whereIn('stagiaire_id', $stagiaires->pluck('id'))
+            ->whereColumn('evaluateur_id', 'stagiaire_id') // Auto-évaluation = l'évaluateur est le stagiaire lui-même
+            ->with(['stagiaire', 'evaluateur'])
+            ->latest()
+            ->get();
+
+        return view('evaluations.auto.index', [
+            'user' => $user,
+            'autoEvaluations' => $autoEvaluations,
+            'stagiaires' => $stagiaires
+        ]);
+    }
 }
