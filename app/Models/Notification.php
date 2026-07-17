@@ -9,6 +9,8 @@ class Notification extends Model
 {
     use HasFactory;
 
+    // Types: sms, email
+    // Statuts: en_attente, envoye, echec
     protected $fillable = [
         'type',
         'destinataire',

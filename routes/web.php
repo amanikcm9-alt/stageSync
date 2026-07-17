@@ -93,6 +93,12 @@ Route::middleware(['auth', 'role:rh'])->get('/rh/dashboard', function () {
     return view('rh.dashboard');
 })->name('rh.dashboard');
 
+
+
+
+
+
+
 // Dashboard Encadrant/Stagiaire
 Route::get('/encadrant/dashboard', function(){ 
     $user = auth()->user();
@@ -309,6 +315,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('candidatures/{candidature}/unarchive', [CandidatureController::class, 'unarchive'])->name('candidatures.unarchive');
     Route::delete('candidatures/{candidature}', [CandidatureController::class, 'destroy'])->name('candidatures.destroy');
     
+   // *************************
     // Gestion des entreprises
     Route::get('entreprises', [EntrepriseController::class, 'index'])->name('entreprises.index');
     Route::get('entreprises/create', [EntrepriseController::class, 'create'])->name('entreprises.create');
@@ -320,7 +327,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('entreprises/{entreprise}/activer', [EntrepriseController::class, 'activer'])->name('entreprises.activer');
     Route::get('entreprises/{entreprise}/reglement', [EntrepriseController::class, 'showReglement'])->name('entreprises.reglement');
     Route::post('entreprises/{entreprise}/desactiver', [EntrepriseController::class, 'desactiver'])->name('entreprises.desactiver');
-    
+    //************************
     // Gestion des secteurs (admin)
     Route::post('secteurs', function(\Illuminate\Http\Request $request) {
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [

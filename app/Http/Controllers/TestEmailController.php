@@ -1,7 +1,9 @@
 <?php
 
 namespace App\Http\Controllers;
-
+Error
+app\Http\Controllers\EntrepriseController.php:141
+Call to a member function all() on array
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Discussion extends Model
 {
+     // Types: message, refus, acceptation, demande_info, evaluation
     protected $fillable = [
         'activity_id',
         'sender_id', 

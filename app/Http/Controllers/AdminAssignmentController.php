@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
  */
 class AdminAssignmentController extends Controller
 {
-    /*
+    
     // Lister toutes les affectations encadrant-stagiaire
     public function index()
     {

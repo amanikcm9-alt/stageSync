@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 class SecteurController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the resource.:Afficher tous les secteurs
      */
     public function index()
     {

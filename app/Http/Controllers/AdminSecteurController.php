@@ -10,6 +10,9 @@ class AdminSecteurController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+    
+    //Méthode store() → Ajouter un secteur
+
     public function store(Request $request)
     {
         $request->validate([

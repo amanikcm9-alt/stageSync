@@ -41,7 +41,7 @@ class CandidatController extends Controller
     }
 
     /**
-     * Détails d'une candidature
+     * Détails d'une candidature:Afficher une candidature spécifique
      */
     public function candidature($id)
     {
